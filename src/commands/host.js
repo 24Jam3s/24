@@ -52,7 +52,7 @@ export default {
     const row = new ActionRowBuilder().addComponents(joinButton);
 
     await interaction.reply({
-      content: `<@&${roleId}>`,
+      content: `${roleId}`,
       embeds: [embed],
       components: [row]
     });
