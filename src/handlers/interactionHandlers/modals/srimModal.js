@@ -1,8 +1,9 @@
 export default {
-  name: 'scrimModal',   // REQUIRED for TitanBot loader
-  customId: /^scrimModal_/,
+  name: 'scrimModal',
 
   async execute(interaction) {
+    if (!interaction.customId.startsWith('scrimModal_')) return;
+
     const hostId = interaction.customId.split('_')[1];
     const scrim = interaction.client.scrims?.get(hostId);
 
