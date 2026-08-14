@@ -33,7 +33,7 @@ export default {
     const region = interaction.options.getString('region');
     const privateServer = interaction.options.getString('privateserver');
 
-    const roleId = 'ROLE_ID_HERE';
+    const roleId = '<@&1534188793689538681>';
 
     const embed = new EmbedBuilder()
       .setTitle(`Hosting a Scrim (${region}) — <@&${roleId}>`)
