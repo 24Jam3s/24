@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 
 export default {
-  name: 'joinScrim',
+  name: 'joinScrim',   // REQUIRED for TitanBot loader
 
   async execute(interaction) {
     if (!interaction.customId.startsWith('joinScrim_')) return;
