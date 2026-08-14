@@ -2,10 +2,9 @@ export default {
   customId: /^scrimModal_/,
 
   async execute(interaction) {
-    const parts = interaction.customId.split('_');
-    const scrimId = parts[1];
+    const hostId = interaction.customId.split('_')[1];
+    const scrim = interaction.client.scrims?.get(hostId);
 
-    const scrim = interaction.client.scrims?.get(scrimId);
     if (!scrim) {
       return interaction.reply({ content: 'Scrim not found.', ephemeral: true });
     }

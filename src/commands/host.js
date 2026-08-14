@@ -61,7 +61,7 @@ export default {
       .setColor(0x5865F2);
 
     const joinButton = new ButtonBuilder()
-      .setCustomId(`joinScrim_${interaction.id}_${playersNeeded}`)
+      .setCustomId(`joinScrim_${interaction.user.id}`)
       .setLabel('Join Game')
       .setStyle(ButtonStyle.Primary);
 
@@ -80,7 +80,7 @@ export default {
     });
 
     interaction.client.scrims ??= new Map();
-    interaction.client.scrims.set(interaction.id, {
+    interaction.client.scrims.set(interaction.user.id, {
       players: [],
       message: msg,
       embed,
@@ -91,9 +91,8 @@ export default {
     });
 
     await interaction.followUp({
-  content: `Scrim ID: \`${interaction.id}\`\nUse this for /endgame`,
-  ephemeral: true
-});
-
+      content: `Scrim created. You can now use /sub or /endgame.`,
+      ephemeral: true
+    });
   }
 };

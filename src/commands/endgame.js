@@ -3,24 +3,14 @@ import { SlashCommandBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('endgame')
-    .setDescription('End a hosted scrim.')
-    .addStringOption(o =>
-      o.setName('id')
-        .setDescription('Scrim ID')
-        .setRequired(true)
-    ),
+    .setDescription('End your active scrim.'),
 
   async execute(interaction) {
-    const scrimId = interaction.options.getString('id');
+    const scrim = interaction.client.scrims?.get(interaction.user.id);
 
-    const scrim = interaction.client.scrims?.get(scrimId);
     if (!scrim) {
-      return interaction.reply({ content: 'Scrim not found.', ephemeral: true });
-    }
-
-    if (scrim.host !== interaction.user.id) {
       return interaction.reply({
-        content: 'Only the host can end this game.',
+        content: 'You do not have an active scrim.',
         ephemeral: true
       });
     }

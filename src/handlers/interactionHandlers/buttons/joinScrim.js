@@ -2,11 +2,9 @@ export default {
   customId: /^joinScrim_/,
 
   async execute(interaction) {
-    const parts = interaction.customId.split('_');
-    const scrimId = parts[1];
-    const playersNeeded = Number(parts[2]);
+    const hostId = interaction.customId.split('_')[1];
+    const scrim = interaction.client.scrims?.get(hostId);
 
-    const scrim = interaction.client.scrims?.get(scrimId);
     if (!scrim) {
       return interaction.reply({ content: 'Scrim not found.', ephemeral: true });
     }
@@ -46,7 +44,7 @@ export default {
     await scrim.message.edit({ embeds: [scrim.embed] });
 
     const modal = new interaction.client.discord.ModalBuilder()
-      .setCustomId(`scrimModal_${scrimId}`)
+      .setCustomId(`scrimModal_${hostId}`)
       .setTitle('Join Scrim');
 
     const usernameInput = new interaction.client.discord.TextInputBuilder()
