@@ -36,7 +36,7 @@ export default {
     const roleId = '<@&1534188793689538681>';
 
     const embed = new EmbedBuilder()
-      .setTitle(`Hosting a Scrim (${region}) — <@&${roleId}>`)
+      .setTitle(`Hosting a Scrim (${region}) — ${roleId}`)
       .setDescription(
         `Gametype: **${gametype}**\n` +
         `Need **${playersNeeded}** players.\n` +
