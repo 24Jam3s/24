@@ -3,10 +3,11 @@ import { SlashCommandBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('join')
-    .setDescription('Join a host\'s scrim.')
-    .addUserOption(o =>
-      o.setName('host')
-        .setDescription('Host of the scrim you want to join.')
+    .setDescription('Join a scrim hosted by another user.')
+    .addUserOption(option =>
+      option
+        .setName('host')
+        .setDescription('The user hosting the scrim you want to join.')
         .setRequired(true)
     ),
 
@@ -23,27 +24,29 @@ export default {
 
     if (!scrim.active) {
       return interaction.reply({
-        content: 'This game has ended.',
-        ephemeral: true
-      });
-    }
-
-    if (scrim.players.length >= scrim.playersNeeded) {
-      return interaction.reply({
-        content: 'This game is already full.',
+        content: 'This scrim has already ended.',
         ephemeral: true
       });
     }
 
     if (scrim.players.includes(interaction.user.id)) {
       return interaction.reply({
-        content: 'You already joined this scrim.',
+        content: 'You are already in this scrim.',
         ephemeral: true
       });
     }
 
+    if (scrim.players.length >= scrim.playersNeeded) {
+      return interaction.reply({
+        content: 'This scrim is already full.',
+        ephemeral: true
+      });
+    }
+
+    // Add player
     scrim.players.push(interaction.user.id);
 
+    // Update embed
     const playerList = scrim.players.map(id => `• <@${id}>`).join('\n');
 
     scrim.embed.setDescription(
@@ -55,12 +58,13 @@ export default {
 
     await scrim.message.edit({ embeds: [scrim.embed] });
 
+    // Announce in thread
     await scrim.thread.send(
       `**${interaction.user.username}** joined the scrim.`
     );
 
-    await interaction.reply({
-      content: 'You have joined the scrim!',
+    return interaction.reply({
+      content: 'You have successfully joined the scrim.',
       ephemeral: true
     });
   }
