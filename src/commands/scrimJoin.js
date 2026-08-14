@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('join')
+    .setName('scrimjoin')
     .setDescription('Join a scrim hosted by another user.')
     .addUserOption(option =>
       option
