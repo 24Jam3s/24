@@ -28,7 +28,7 @@ export default {
       .setTitle('Looking for 1 sub')
       .setDescription(
         `Host is looking for **1 substitute player(s)**.\n` +
-        `Join using the **Join Game** button above.\n\n` +
+        `Use \`/join host:@${interaction.user.username}\` to join.\n\n` +
         `Issues? Join discord.gg/kwhPbxjySc`
       )
       .setColor(0x5865F2);

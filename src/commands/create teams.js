@@ -29,10 +29,7 @@ export default {
       });
     }
 
-    // Shuffle players randomly
     const shuffled = [...scrim.players].sort(() => Math.random() - 0.5);
-
-    // Split into two teams
     const half = Math.ceil(shuffled.length / 2);
     const yellowTeam = shuffled.slice(0, half);
     const purpleTeam = shuffled.slice(half);

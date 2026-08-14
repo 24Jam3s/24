@@ -1,9 +1,6 @@
 import {
   SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle
+  EmbedBuilder
 } from 'discord.js';
 
 export default {
@@ -60,17 +57,9 @@ export default {
       )
       .setColor(0x5865F2);
 
-    const joinButton = new ButtonBuilder()
-      .setCustomId(`joinScrim_${interaction.user.id}`)
-      .setLabel('Join Game')
-      .setStyle(ButtonStyle.Primary);
-
-    const row = new ActionRowBuilder().addComponents(joinButton);
-
     const msg = await interaction.reply({
       content: `<@&${roleId}>`,
       embeds: [embed],
-      components: [row],
       fetchReply: true
     });
 
@@ -91,7 +80,7 @@ export default {
     });
 
     await interaction.followUp({
-      content: `Scrim created. You can now use /sub or /endgame.`,
+      content: 'Scrim created. Players should use `/join` to enter your game.',
       ephemeral: true
     });
   }
