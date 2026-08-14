@@ -1,12 +1,5 @@
-import {
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle,
-  ActionRowBuilder
-} from 'discord.js';
-
 export default {
-  name: 'joinScrim',   // REQUIRED for TitanBot loader
+  name: 'joinScrim',
 
   async execute(interaction) {
     if (!interaction.customId.startsWith('joinScrim_')) return;
@@ -52,20 +45,13 @@ export default {
 
     await scrim.message.edit({ embeds: [scrim.embed] });
 
-    const modal = new ModalBuilder()
-      .setCustomId(`scrimModal_${hostId}`)
-      .setTitle('Join Scrim');
+    await interaction.reply({
+      content: 'You joined the scrim! Please send your Roblox display name in the thread.',
+      ephemeral: true
+    });
 
-    const usernameInput = new TextInputBuilder()
-      .setCustomId('scrim_username')
-      .setLabel('Roblox Display Name')
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true);
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(usernameInput)
+    await scrim.thread.send(
+      `<@${interaction.user.id}> please reply with your **Roblox display name**.`
     );
-
-    await interaction.showModal(modal);
   }
 };
