@@ -1,4 +1,5 @@
 export default {
+  name: 'scrimModal',   // REQUIRED for TitanBot loader
   customId: /^scrimModal_/,
 
   async execute(interaction) {
