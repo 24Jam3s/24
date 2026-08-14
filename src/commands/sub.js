@@ -28,12 +28,12 @@ export default {
       .setTitle('Looking for 1 Sub')
       .setDescription(
         `Host is looking for **1 substitute player**.\n` +
-        `Use \`/scrimjoin host:@${interaction.user.username}\` to join.\n\n` +
+        `Use **/scrimjoin host:@${interaction.user.username}** to join.\n\n` +
         `Issues? Join discord.gg/kwhPbxjySc`
       )
       .setColor(0x5865F2);
 
-    // ⭐ Send to original channel, NOT the thread
+    // ⭐ Send to original channel, not thread
     await scrim.message.channel.send({
       content: `<@&${roleId}>`,
       embeds: [embed]

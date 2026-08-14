@@ -53,7 +53,8 @@ export default {
         `Hosting a **${gametype}** game! Need **${playersNeeded}** more player(s) to join.\n` +
         `Hosted by: **${interaction.user.username}**\n\n` +
         `Private Server: ${privateServer}\n\n` +
-        `**Players Joined:**\n• *(none yet)*`
+        `**Players Joined:**\n• *(none yet)*\n\n` +
+        `Use **/scrimjoin host:@${interaction.user.username}** to join the scrim!`
       )
       .setColor(0x5865F2);
 
@@ -80,7 +81,7 @@ export default {
     });
 
     await interaction.followUp({
-      content: 'Scrim created. Players should use `/join` to enter your game.',
+      content: 'Scrim created. Players should use /scrimjoin to enter your game.',
       ephemeral: true
     });
   }

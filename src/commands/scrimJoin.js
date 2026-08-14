@@ -58,9 +58,10 @@ export default {
 
     await scrim.message.edit({ embeds: [scrim.embed] });
 
-    // Announce in thread
+    // ⭐ Auto‑ping host
     await scrim.thread.send(
-      `**${interaction.user.username}** joined the scrim.`
+      `<@${scrim.host}> someone joined your scrim!\n` +
+      `**${interaction.user.username}** has joined.`
     );
 
     return interaction.reply({
