@@ -25,21 +25,22 @@ export default {
     const roleId = '1534188793689538681';
 
     const embed = new EmbedBuilder()
-      .setTitle('Looking for 1 sub')
+      .setTitle('Looking for 1 Sub')
       .setDescription(
-        `Host is looking for **1 substitute player(s)**.\n` +
-        `Use \`/join host:@${interaction.user.username}\` to join.\n\n` +
+        `Host is looking for **1 substitute player**.\n` +
+        `Use \`/scrimjoin host:@${interaction.user.username}\` to join.\n\n` +
         `Issues? Join discord.gg/kwhPbxjySc`
       )
       .setColor(0x5865F2);
 
-    await scrim.thread.send({
+    // ⭐ Send to original channel, NOT the thread
+    await scrim.message.channel.send({
       content: `<@&${roleId}>`,
       embeds: [embed]
     });
 
     await interaction.reply({
-      content: 'Sub request sent.',
+      content: 'Sub request sent in the main channel.',
       ephemeral: true
     });
   }
