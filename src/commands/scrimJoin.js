@@ -43,11 +43,16 @@ export default {
       });
     }
 
-    // Add player
+    // ⭐ Add player to scrim
     scrim.players.push(interaction.user.id);
 
+    // ⭐ Add player to thread so they can talk
+    await scrim.thread.members.add(interaction.user.id);
+
     // Update embed
-    const playerList = scrim.players.map(id => `• <@${id}>`).join('\n');
+    const playerList =
+      `• <@${scrim.host}> *(host)*\n` +
+      scrim.players.map(id => `• <@${id}>`).join('\n');
 
     scrim.embed.setDescription(
       scrim.embed.data.description.replace(

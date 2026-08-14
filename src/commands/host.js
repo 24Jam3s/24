@@ -53,7 +53,7 @@ export default {
         `Hosting a **${gametype}** game! Need **${playersNeeded}** more player(s) to join.\n` +
         `Hosted by: **${interaction.user.username}**\n\n` +
         `Private Server: ${privateServer}\n\n` +
-        `**Players Joined:**\n• *(none yet)*\n\n` +
+        `**Players Joined:**\n• <@${interaction.user.id}> *(host)*\n\n` +
         `Use **/scrimjoin host:@${interaction.user.username}** to join the scrim!`
       )
       .setColor(0x5865F2);
@@ -69,13 +69,17 @@ export default {
       autoArchiveDuration: 60
     });
 
+    // ⭐ Add host to thread automatically
+    await thread.members.add(interaction.user.id);
+
+    // ⭐ Host auto‑joins scrim internally but does NOT count toward playersNeeded
     interaction.client.scrims ??= new Map();
     interaction.client.scrims.set(interaction.user.id, {
-      players: [],
+      players: [], // host not counted here
+      host: interaction.user.id,
       message: msg,
       embed,
       thread,
-      host: interaction.user.id,
       active: true,
       playersNeeded
     });
