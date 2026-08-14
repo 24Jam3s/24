@@ -7,17 +7,33 @@ export default {
     const playersNeeded = Number(parts[2]);
 
     const scrim = interaction.client.scrims?.get(scrimId);
-    if (!scrim) return interaction.reply({ content: 'Scrim not found.', ephemeral: true });
-
-    // Prevent duplicate joins
-    if (scrim.players.includes(interaction.user.id)) {
-      return interaction.reply({ content: 'You already joined.', ephemeral: true });
+    if (!scrim) {
+      return interaction.reply({ content: 'Scrim not found.', ephemeral: true });
     }
 
-    // Add player
+    if (!scrim.active) {
+      return interaction.reply({
+        content: 'This game has ended.',
+        ephemeral: true
+      });
+    }
+
+    if (scrim.players.length >= scrim.playersNeeded) {
+      return interaction.reply({
+        content: 'This game is already full. You cannot join.',
+        ephemeral: true
+      });
+    }
+
+    if (scrim.players.includes(interaction.user.id)) {
+      return interaction.reply({
+        content: 'You already joined.',
+        ephemeral: true
+      });
+    }
+
     scrim.players.push(interaction.user.id);
 
-    // Update embed
     const playerList = scrim.players.map(id => `• <@${id}>`).join('\n');
 
     scrim.embed.setDescription(
@@ -29,7 +45,6 @@ export default {
 
     await scrim.message.edit({ embeds: [scrim.embed] });
 
-    // Modal
     const modal = new interaction.client.discord.ModalBuilder()
       .setCustomId(`scrimModal_${scrimId}`)
       .setTitle('Join Scrim');

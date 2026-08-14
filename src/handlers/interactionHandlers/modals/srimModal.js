@@ -6,7 +6,16 @@ export default {
     const scrimId = parts[1];
 
     const scrim = interaction.client.scrims?.get(scrimId);
-    if (!scrim) return interaction.reply({ content: 'Scrim not found.', ephemeral: true });
+    if (!scrim) {
+      return interaction.reply({ content: 'Scrim not found.', ephemeral: true });
+    }
+
+    if (!scrim.active) {
+      return interaction.reply({
+        content: 'This game has ended.',
+        ephemeral: true
+      });
+    }
 
     const username = interaction.fields.getTextInputValue('scrim_username');
 

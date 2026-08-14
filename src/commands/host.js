@@ -50,7 +50,6 @@ export default {
     const playersNeeded = gametype === '2s' ? 3 : 1;
     const roleId = '1534188793689538681';
 
-    // Create embed
     const embed = new EmbedBuilder()
       .setTitle(`Hosting a Lower ${matchtype} Match (${region})`)
       .setDescription(
@@ -61,7 +60,6 @@ export default {
       )
       .setColor(0x5865F2);
 
-    // Button
     const joinButton = new ButtonBuilder()
       .setCustomId(`joinScrim_${interaction.id}_${playersNeeded}`)
       .setLabel('Join Game')
@@ -69,7 +67,6 @@ export default {
 
     const row = new ActionRowBuilder().addComponents(joinButton);
 
-    // Send message
     const msg = await interaction.reply({
       content: `<@&${roleId}>`,
       embeds: [embed],
@@ -77,19 +74,20 @@ export default {
       fetchReply: true
     });
 
-    // Auto-create thread
     const thread = await msg.startThread({
       name: `${gametype} Scrim (${region})`,
       autoArchiveDuration: 60
     });
 
-    // Store player list in message metadata (TitanBot-safe)
     interaction.client.scrims ??= new Map();
     interaction.client.scrims.set(interaction.id, {
       players: [],
       message: msg,
       embed,
-      thread
+      thread,
+      host: interaction.user.id,
+      active: true,
+      playersNeeded
     });
   }
 };
