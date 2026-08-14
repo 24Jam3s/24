@@ -1,3 +1,10 @@
+import {
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder
+} from 'discord.js';
+
 export default {
   customId: /^joinScrim_/,
 
@@ -43,18 +50,18 @@ export default {
 
     await scrim.message.edit({ embeds: [scrim.embed] });
 
-    const modal = new interaction.client.discord.ModalBuilder()
+    const modal = new ModalBuilder()
       .setCustomId(`scrimModal_${hostId}`)
       .setTitle('Join Scrim');
 
-    const usernameInput = new interaction.client.discord.TextInputBuilder()
+    const usernameInput = new TextInputBuilder()
       .setCustomId('scrim_username')
       .setLabel('Roblox Display Name')
-      .setStyle(interaction.client.discord.TextInputStyle.Short)
+      .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
     modal.addComponents(
-      new interaction.client.discord.ActionRowBuilder().addComponents(usernameInput)
+      new ActionRowBuilder().addComponents(usernameInput)
     );
 
     await interaction.showModal(modal);
