@@ -9,52 +9,87 @@ import {
 export default {
   data: new SlashCommandBuilder()
     .setName('host')
-    .setDescription('Host a scrim.')
+    .setDescription('Host a scrim match.')
     .addStringOption(o =>
       o.setName('gametype')
-        .setDescription('Gametype')
-        .setRequired(true))
-    .addIntegerOption(o =>
-      o.setName('players')
-        .setDescription('Players needed')
-        .setRequired(true))
+        .setDescription('Choose 2s or 3s')
+        .setRequired(true)
+        .addChoices(
+          { name: '2s', value: '2s' },
+          { name: '3s', value: '3s' }
+        ))
+    .addStringOption(o =>
+      o.setName('matchtype')
+        .setDescription('DL = Default Loadout, CL = Custom Loadout')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Default Loadout (DL)', value: 'DL' },
+          { name: 'Custom Loadout (CL)', value: 'CL' }
+        ))
     .addStringOption(o =>
       o.setName('region')
-        .setDescription('Region')
-        .setRequired(true))
+        .setDescription('Select region')
+        .setRequired(true)
+        .addChoices(
+          { name: 'EU', value: 'EU' },
+          { name: 'Asia', value: 'Asia' },
+          { name: 'NA', value: 'NA' }
+        ))
     .addStringOption(o =>
       o.setName('privateserver')
         .setDescription('Private server link')
-        .setRequired(true)),
+        .setRequired(true)
+    ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const gametype = interaction.options.getString('gametype');
-    const playersNeeded = interaction.options.getInteger('players');
+    const matchtype = interaction.options.getString('matchtype');
     const region = interaction.options.getString('region');
     const privateServer = interaction.options.getString('privateserver');
 
-    const roleId = '<@&1534188793689538681>';
+    const playersNeeded = gametype === '2s' ? 3 : 1;
+    const roleId = '1534188793689538681';
 
+    // Create embed
     const embed = new EmbedBuilder()
-      .setTitle(`Hosting a Scrim (${region}) — ${roleId}`)
+      .setTitle(`Hosting a Lower ${matchtype} Match (${region})`)
       .setDescription(
-        `Gametype: **${gametype}**\n` +
-        `Need **${playersNeeded}** players.\n` +
-        `Hosted by: ${interaction.user.username}`
+        `Hosting a **${gametype}** game! Need **${playersNeeded}** more player(s) to join.\n` +
+        `Hosted by: **${interaction.user.username}**\n\n` +
+        `Private Server: ${privateServer}\n\n` +
+        `**Players Joined:**\n• *(none yet)*`
       )
       .setColor(0x5865F2);
 
+    // Button
     const joinButton = new ButtonBuilder()
-      .setCustomId(`joinScrim_${interaction.id}_${playersNeeded}_${privateServer}`)
+      .setCustomId(`joinScrim_${interaction.id}_${playersNeeded}`)
       .setLabel('Join Game')
       .setStyle(ButtonStyle.Primary);
 
     const row = new ActionRowBuilder().addComponents(joinButton);
 
-    await interaction.reply({
-      content: `${roleId}`,
+    // Send message
+    const msg = await interaction.reply({
+      content: `<@&${roleId}>`,
       embeds: [embed],
-      components: [row]
+      components: [row],
+      fetchReply: true
+    });
+
+    // Auto-create thread
+    const thread = await msg.startThread({
+      name: `${gametype} Scrim (${region})`,
+      autoArchiveDuration: 60
+    });
+
+    // Store player list in message metadata (TitanBot-safe)
+    interaction.client.scrims ??= new Map();
+    interaction.client.scrims.set(interaction.id, {
+      players: [],
+      message: msg,
+      embed,
+      thread
     });
   }
 };

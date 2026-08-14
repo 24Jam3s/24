@@ -1,18 +1,22 @@
-module.exports = {
-    customId: /^scrimModal_/,
+export default {
+  customId: /^scrimModal_/,
 
-    async execute(interaction) {
-        const parts = interaction.customId.split('_');
-        const scrimId = parts[1];
-        const playersNeeded = parts[2];
-        const privateServer = parts[3];
+  async execute(interaction) {
+    const parts = interaction.customId.split('_');
+    const scrimId = parts[1];
 
-        const username = interaction.fields.getTextInputValue('scrim_username');
+    const scrim = interaction.client.scrims?.get(scrimId);
+    if (!scrim) return interaction.reply({ content: 'Scrim not found.', ephemeral: true });
 
-        await interaction.reply({
-            content: `You joined the scrim!\nUsername: **${username}**\nPrivate Server: ${privateServer}`,
-            ephemeral: true
-        });
-    }
+    const username = interaction.fields.getTextInputValue('scrim_username');
+
+    await scrim.thread.send(
+      `**${interaction.user.username}** joined the scrim.\nRoblox: **${username}**`
+    );
+
+    await interaction.reply({
+      content: 'You have joined the scrim!',
+      ephemeral: true
+    });
+  }
 };
-
