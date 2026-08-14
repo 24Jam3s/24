@@ -89,5 +89,11 @@ export default {
       active: true,
       playersNeeded
     });
+
+    await interaction.followUp({
+  content: `Scrim ID: \`${interaction.id}\`\nUse this for /endgame`,
+  ephemeral: true
+});
+
   }
 };
