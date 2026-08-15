@@ -251,5 +251,62 @@ async function handleLeveling(message, client) {
     logger.error('Error handling leveling for message:', error);
   }
 
-  
-}
+  export default {
+  name: 'messageCreate',
+
+  async execute(message, client) {
+    if (message.author.bot) return;
+
+    client.afkUsers ??= new Set();
+
+    // Remove AFK when user sends a message
+    if (client.afkUsers.has(message.author.id)) {
+      const member = message.member;
+
+      if (member.nickname && member.nickname.startsWith("AFK | ")) {
+        const newNick = member.nickname.replace("AFK | ", "");
+        try {
+          await member.setNickname(newNick);
+        } catch (err) {
+          console.log("Failed to remove AFK nickname:", err);
+        }
+      }
+
+      client.afkUsers.delete(message.author.id);
+
+      await message.reply(`Welcome back <@${message.author.id}> — AFK removed.`);
+      return;
+    }
+
+    // Notify when pinging AFK user
+    if (message.mentions.users.size > 0) {
+      for (const [id] of message.mentions.users) {
+        if (client.afkUsers.has(id)) {
+          await message.reply(`⚠️ <@${id}> is currently **AFK**.`);
+        }
+      }
+    }
+
+    setInterval(async () => {
+  if (!global.client || !global.client.reminders) return;
+
+  const now = Date.now();
+
+  const due = global.client.reminders.filter(r => r.time <= now);
+
+  for (const reminder of due) {
+    try {
+      const user = await global.client.users.fetch(reminder.userId);
+      await user.send(`⏰ **Reminder:** ${reminder.message}`);
+    } catch (err) {
+      console.log('Failed to DM user, trying channel ping instead.');
+
+      // fallback: ping in a channel (optional)
+    }
+  }
+
+  // Remove completed reminders
+  global.client.reminders = global.client.reminders.filter(r => r.time > now);
+
+}, 5000); // checks every 5 seconds
+
