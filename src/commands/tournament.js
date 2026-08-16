@@ -1,22 +1,22 @@
 const embed = new EmbedBuilder()
   .setTitle(`🏆 ${type} ${format} 🏆`)
   .setDescription(
-    `**Prize : ${prize}**\n\n` +
+`**Prize : ${prize}**
 
-    `**Tournament Information**\n` +
-    `> - Tournament Format :\n` +
-    `> ${type} ${format}\n` +
-    `> - Entry Capacity :\n` +
-    `> ${capacity} Teams\n` +
-    `> - Map Pool :\n` +
-    `> ${mappool}\n\n` +
+**Tournament Information**
+> - Tournament Format :
+> ${type} ${format}
+> - Entry Capacity :
+> ${capacity} Teams
+> - Map Pool :
+> ${mappool}
 
-    `**Tournament Rules**\n\n` +
-    `> - Do not enter with players who are unwilling to be your teammate or do not wish to participate.\n` +
-    `> - No spectators are allowed during the game (except for @Owner if requested)\n` +
-    `> - All players must post results\n` +
-    `> - No camo avatars\n` +
-    `> - Private servers decided by heads or tails\n` +
-    `> - All games are best of 3`
+**Tournament Rules**
+> - Do not enter with players who are unwilling to be your teammate or do not wish to participate.
+> - No spectators are allowed during the game (except for @Owner if requested)
+> - All players must post results
+> - No camo avatars
+> - Private servers decided by heads or tails
+> - All games are best of 3`
   )
   .setColor(0xFFD700);
