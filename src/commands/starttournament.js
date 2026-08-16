@@ -24,14 +24,6 @@ export default {
 
     tournament.started = true;
 
-    const channel = interaction.client.channels.cache.get('1531327666316116049');
-
-    await channel.send(
-      `🏆 **The tournament has officially started!**\n` +
-      `Team entries are now locked.\n\n` +
-      `Use **/reportwin** to report match winners.`
-    );
-
     return interaction.reply({
       content: 'Tournament started.',
       ephemeral: true

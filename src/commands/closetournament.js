@@ -15,13 +15,6 @@ export default {
       });
     }
 
-    const channel = interaction.client.channels.cache.get('1531327666316116049');
-
-    await channel.send(
-      `⚠️ **The tournament has been closed.**\n` +
-      `All data has been cleared.`
-    );
-
     interaction.client.tournament = null;
 
     return interaction.reply({

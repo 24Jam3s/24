@@ -6,7 +6,7 @@ export default {
     .setDescription('Report the winner of a match.')
     .addIntegerOption(o =>
       o.setName('match')
-        .setDescription('Match number (1, 2, 3...)')
+        .setDescription('Match number')
         .setRequired(true)
     )
     .addStringOption(o =>
@@ -28,15 +28,9 @@ export default {
     const match = interaction.options.getInteger('match');
     const winner = interaction.options.getString('winner');
 
-    const channel = interaction.client.channels.cache.get('1531327666316116049');
-
-    await channel.send(
-      `🏆 **Match ${match} Winner:** ${winner}`
-    );
-
     return interaction.reply({
-      content: `Winner for Match ${match} reported.`,
-      ephemeral: true
+      content: `🏆 **Match ${match} Winner:** ${winner}`,
+      ephemeral: false
     });
   }
 };
