@@ -1,55 +1,87 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('createteams')
-    .setDescription('Create random teams from players who joined your scrim.'),
+    .setDescription('Create teams automatically based on tournament type.')
+    .addStringOption(o =>
+      o.setName('host')
+        .setDescription('Host of the tournament')
+        .setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName('players')
+        .setDescription('Comma-separated list of all players')
+        .setRequired(true)
+    ),
 
   async execute(interaction) {
-    const scrim = interaction.client.scrims?.get(interaction.user.id);
+    const tournament = interaction.client.tournament;
 
-    if (!scrim) {
+    if (!tournament) {
       return interaction.reply({
-        content: 'You do not have an active scrim.',
+        content: 'There is no active tournament.',
         ephemeral: true
       });
     }
 
-    if (!scrim.active) {
+    const host = interaction.options.getString('host');
+    const playersRaw = interaction.options.getString('players');
+
+    // Convert comma-separated list into array
+    let players = playersRaw.split(',').map(p => p.trim());
+
+    // Include host automatically
+    if (!players.includes(host)) {
+      players.unshift(host);
+    }
+
+    // Remove duplicates
+    players = [...new Set(players)];
+
+    const maxPlayers = tournament.capacity; // 8 or 16
+
+    // Prevent overflow
+    if (players.length > maxPlayers) {
       return interaction.reply({
-        content: 'This game has ended.',
+        content: `Too many players! Max allowed is ${maxPlayers}, but you provided ${players.length}.`,
         ephemeral: true
       });
     }
 
-    if (scrim.players.length < 2) {
+    // Prevent joining after full
+    if (tournament.teams.length >= maxPlayers) {
       return interaction.reply({
-        content: 'Not enough players joined to create teams.',
+        content: `Tournament is full. No more players can join.`,
         ephemeral: true
       });
     }
 
-    const shuffled = [...scrim.players].sort(() => Math.random() - 0.5);
-    const half = Math.ceil(shuffled.length / 2);
-    const yellowTeam = shuffled.slice(0, half);
-    const purpleTeam = shuffled.slice(half);
+    // Auto team splitting
+    const teamSize = tournament.type === '1v1' ? 1 :
+                     tournament.type === '2v2' ? 2 :
+                     tournament.type === '3v3' ? 3 : 1;
 
-    const yellowList = yellowTeam.map(id => `<@${id}>`).join(', ');
-    const purpleList = purpleTeam.map(id => `<@${id}>`).join(', ');
+    const teams = [];
+    for (let i = 0; i < players.length; i += teamSize) {
+      const teamPlayers = players.slice(i, i + teamSize);
 
-    const embed = new EmbedBuilder()
-      .setTitle('Teams Created')
-      .setDescription(
-        `**Yellow Pad:**\n${yellowList}\n\n` +
-        `**Purple Pad:**\n${purpleList}`
-      )
-      .setColor(0xFFD700);
+      // If last team is incomplete, stop
+      if (teamPlayers.length < teamSize) break;
 
-    await scrim.thread.send({ embeds: [embed] });
+      teams.push({
+        members: teamPlayers
+      });
+    }
 
-    await interaction.reply({
-      content: 'Teams created successfully.',
-      ephemeral: true
+    // Save teams to tournament
+    tournament.teams = teams;
+
+    return interaction.reply({
+      content: `Teams created successfully.\n\n${teams
+        .map((t, i) => `Team ${i + 1}: ${t.members.join(', ')}`)
+        .join('\n')}`,
+      ephemeral: false
     });
   }
 };
