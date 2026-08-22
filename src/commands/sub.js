@@ -3,40 +3,45 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('sub')
-    .setDescription('Re-send the updated league embed showing remaining players and joined list.'),
+    .setDescription('Request a substitute player for your scrim.'),
 
   async execute(interaction) {
-    const league = interaction.client.league;
+    const scrim = interaction.client.scrims?.get(interaction.user.id);
 
-    if (!league) {
+    if (!scrim) {
       return interaction.reply({
-        content: 'There is no active league.',
+        content: 'You do not have an active scrim.',
         ephemeral: true
       });
     }
 
-    // Calculate remaining players
-    const remainingPlayers = Math.max(0, league.maxPlayers - league.players.length);
+    if (!scrim.active) {
+      return interaction.reply({
+        content: 'This game has ended.',
+        ephemeral: true
+      });
+    }
 
-    // Build updated embed
+    const roleId = '1534188793689538681';
+
     const embed = new EmbedBuilder()
-      .setTitle(`${league.matchtype} League (${league.region})`)
-      .setDescription([
-        `Hosting a \`${league.gametype}\` Game! Need \`${remainingPlayers}\` players to join.`,
-        ``,
-        `Joined Players:`,
-        ...league.players.map(p => `- ${p}`),
-        ``,
-        `Do /joinleague to join.`,
-        `host: ${league.host}`,
-        ``,
-        `Private Server: ${league.privateserver}`
-      ].join('\n'))
-      .setColor(0x3498db);
+      .setTitle('Looking for 1 Sub')
+      .setDescription(
+        `Host is looking for **1 substitute player**.\n` +
+        `Use **/scrimjoin host:@${interaction.user.username}** to join.\n\n` +
+        `Issues? Join discord.gg/kwhPbxjySc`
+      )
+      .setColor(0x5865F2);
 
-    return interaction.reply({
-      embeds: [embed],
-      ephemeral: false
+    // ⭐ Send to original channel, not thread
+    await scrim.message.channel.send({
+      content: `<@&${roleId}>`,
+      embeds: [embed]
+    });
+
+    await interaction.reply({
+      content: 'Sub request sent in the main channel.',
+      ephemeral: true
     });
   }
 };

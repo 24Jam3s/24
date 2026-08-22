@@ -1,62 +1,77 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('joinleague')
-    .setDescription('Join the active league match.'),
+    .setName('scrimjoin')
+    .setDescription('Join a scrim hosted by another user.')
+    .addUserOption(option =>
+      option
+        .setName('host')
+        .setDescription('The user hosting the scrim you want to join.')
+        .setRequired(true)
+    ),
 
   async execute(interaction) {
-    const league = interaction.client.league;
+    const host = interaction.options.getUser('host');
+    const scrim = interaction.client.scrims?.get(host.id);
 
-    if (!league) {
+    if (!scrim) {
       return interaction.reply({
-        content: 'There is no active league.',
+        content: 'That user does not have an active scrim.',
         ephemeral: true
       });
     }
 
-    if (league.closed) {
+    if (!scrim.active) {
       return interaction.reply({
-        content: 'League is full. No more players can join.',
+        content: 'This scrim has already ended.',
         ephemeral: true
       });
     }
 
-    const user = interaction.user.username;
-
-    if (league.players.includes(user)) {
+    if (scrim.players.includes(interaction.user.id)) {
       return interaction.reply({
-        content: 'You are already in the league.',
+        content: 'You are already in this scrim.',
         ephemeral: true
       });
     }
 
-    league.players.push(user);
-
-    if (league.players.length >= league.maxPlayers) {
-      league.closed = true;
+    if (scrim.players.length >= scrim.playersNeeded) {
+      return interaction.reply({
+        content: 'This scrim is already full.',
+        ephemeral: true
+      });
     }
 
-    const remainingPlayers = Math.max(0, league.maxPlayers - league.players.length);
+    // ⭐ Add player to scrim
+    scrim.players.push(interaction.user.id);
 
-    const embed = new EmbedBuilder()
-      .setTitle(`${league.matchtype} League (${league.region})`)
-      .setDescription([
-        `Hosting a \`${league.gametype}\` Game! Need \`${remainingPlayers}\` players to join.`,
-        ``,
-        `Joined Players:`,
-        ...league.players.map(p => `- ${p}`),
-        ``,
-        `Do /joinleague to join.`,
-        `host: ${league.host}`,
-        ``,
-        `Private Server: ${league.privateserver}`
-      ].join('\n'))
-      .setColor(0x3498db);
+    // ⭐ Add player to thread so they can talk
+    await scrim.thread.members.add(interaction.user.id);
+
+    // Update embed
+    const playerList =
+      `• <@${scrim.host}> *(host)*\n` +
+      scrim.players.map(id => `• <@${id}>`).join('\n');
+
+    scrim.embed.setDescription(
+      scrim.embed.data.description.replace(
+        /\*\*Players Joined:\*\*[\s\S]*/g,
+        `**Players Joined:**\n${playerList}`
+      )
+    );
+
+    await scrim.message.edit({ embeds: [scrim.embed] });
+
+    // ⭐ Auto‑ping host
+    await scrim.thread.send(
+      `<@${scrim.host}> someone joined your scrim!\n` +
+      `**${interaction.user.username}** has joined.`
+    );
 
     return interaction.reply({
-      embeds: [embed],
-      ephemeral: false
+      content: 'You have successfully joined the scrim.',
+      ephemeral: true
     });
   }
 };

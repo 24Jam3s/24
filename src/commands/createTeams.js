@@ -3,56 +3,103 @@ import { SlashCommandBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('createteams')
-    .setDescription('Auto-split league players into teams.')
+    .setDescription('Create a scrim and auto-split players into teams.')
+    .addStringOption(o =>
+      o.setName('host')
+        .setDescription('Host of the scrim')
+        .setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName('players')
+        .setDescription('Comma-separated list of all players')
+        .setRequired(true)
+    )
     .addIntegerOption(o =>
       o.setName('teamsize')
-        .setDescription('Team size: 1, 2, or 3')
+        .setDescription('Size of each scrim team (1, 2, or 3)')
+        .setRequired(true)
+    )
+    .addIntegerOption(o =>
+      o.setName('maxplayers')
+        .setDescription('Maximum number of players allowed in the scrim')
         .setRequired(true)
     ),
 
   async execute(interaction) {
-    const league = interaction.client.league;
-
-    if (!league) {
-      return interaction.reply({
-        content: 'There is no active league.',
-        ephemeral: true
-      });
-    }
-
+    const host = interaction.options.getString('host');
+    const playersRaw = interaction.options.getString('players');
     const teamSize = interaction.options.getInteger('teamsize');
+    const maxPlayers = interaction.options.getInteger('maxplayers');
 
-    if (![1, 2, 3].includes(teamSize)) {
+    // Create scrim object if not exists
+    if (!interaction.client.scrim) {
+      interaction.client.scrim = {
+        players: [],
+        teams: [],
+        closed: false
+      };
+    }
+
+    const scrim = interaction.client.scrim;
+
+    // If scrim is already full, block joining
+    if (scrim.closed) {
       return interaction.reply({
-        content: 'Invalid team size. Must be 1, 2, or 3.',
+        content: `Scrim is already full. No more players can join.`,
         ephemeral: true
       });
     }
 
-    const players = league.players;
+    // Convert comma-separated list into array
+    let players = playersRaw.split(',').map(p => p.trim());
 
-    if (players.length < teamSize) {
+    // Include host automatically
+    if (!players.includes(host)) {
+      players.unshift(host);
+    }
+
+    // Remove duplicates
+    players = [...new Set(players)];
+
+    // Check if adding these players exceeds max
+    if (scrim.players.length + players.length > maxPlayers) {
       return interaction.reply({
-        content: `Not enough players to create teams of size ${teamSize}.`,
+        content: `Too many players! Scrim max is ${maxPlayers}. Current: ${scrim.players.length}. You tried to add ${players.length}.`,
         ephemeral: true
       });
     }
 
+    // Add players to scrim
+    for (const p of players) {
+      if (!scrim.players.includes(p)) {
+        scrim.players.push(p);
+      }
+    }
+
+    // If scrim is now full, close it
+    if (scrim.players.length >= maxPlayers) {
+      scrim.closed = true;
+    }
+
+    // Auto team splitting
     const teams = [];
-    for (let i = 0; i < players.length; i += teamSize) {
-      const teamPlayers = players.slice(i, i + teamSize);
+    for (let i = 0; i < scrim.players.length; i += teamSize) {
+      const teamPlayers = scrim.players.slice(i, i + teamSize);
 
       if (teamPlayers.length === teamSize) {
         teams.push(teamPlayers);
       }
     }
 
-    league.teams = teams;
+    scrim.teams = teams;
 
     return interaction.reply({
       content:
-        `Teams created successfully.\n\n` +
-        teams.map((t, i) => `Team ${i + 1}: ${t.join(', ')}`).join('\n'),
+        `Scrim created successfully.\n\n` +
+        `Players (${scrim.players.length}/${maxPlayers}): ${scrim.players.join(', ')}\n\n` +
+        `Teams:\n` +
+        teams.map((t, i) => `Team ${i + 1}: ${t.join(', ')}`).join('\n') +
+        (scrim.closed ? `\n\nScrim is now FULL and closed.` : ``),
       ephemeral: false
     });
   }
