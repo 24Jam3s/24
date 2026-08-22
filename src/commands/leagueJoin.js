@@ -2,8 +2,8 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('sub')
-    .setDescription('Re-send the updated league embed showing remaining players and joined list.'),
+    .setName('joinleague')
+    .setDescription('Join the active league match.'),
 
   async execute(interaction) {
     const league = interaction.client.league;
@@ -15,10 +15,30 @@ export default {
       });
     }
 
-    // Calculate remaining players
+    if (league.closed) {
+      return interaction.reply({
+        content: 'League is full. No more players can join.',
+        ephemeral: true
+      });
+    }
+
+    const user = interaction.user.username;
+
+    if (league.players.includes(user)) {
+      return interaction.reply({
+        content: 'You are already in the league.',
+        ephemeral: true
+      });
+    }
+
+    league.players.push(user);
+
+    if (league.players.length >= league.maxPlayers) {
+      league.closed = true;
+    }
+
     const remainingPlayers = Math.max(0, league.maxPlayers - league.players.length);
 
-    // Build updated embed
     const embed = new EmbedBuilder()
       .setTitle(`${league.matchtype} League (${league.region})`)
       .setDescription([

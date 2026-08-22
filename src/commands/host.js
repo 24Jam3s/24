@@ -71,13 +71,19 @@ export default {
       teams: []
     };
 
-    const remainingPlayers = maxPlayers - 1;
+    // FIXED: correct remaining players
+    const remainingPlayers = maxPlayers - interaction.client.league.players.length;
 
     const embed = new EmbedBuilder()
       .setTitle(`${matchtype} League (${region})`)
       .setDescription([
         `Hosting a \`${gametype}\` Game! Need \`${remainingPlayers}\` players to join.`,
-        `Hosted by: \`${host}\``,
+        ``,
+        `Joined Players:`,
+        ...interaction.client.league.players.map(p => `- ${p}`),
+        ``,
+        `Do /joinleague to join.`,
+        `host: ${host}`,
         ``,
         `Private Server: ${privateserver}`
       ].join('\n'))
