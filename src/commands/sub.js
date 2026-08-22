@@ -3,45 +3,32 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('sub')
-    .setDescription('Request a substitute player for your scrim.'),
+    .setDescription('Re-send the league request embed showing remaining players needed.'),
 
   async execute(interaction) {
-    const scrim = interaction.client.scrims?.get(interaction.user.id);
+    const league = interaction.client.league;
 
-    if (!scrim) {
+    if (!league) {
       return interaction.reply({
-        content: 'You do not have an active scrim.',
+        content: 'There is no active league.',
         ephemeral: true
       });
     }
 
-    if (!scrim.active) {
-      return interaction.reply({
-        content: 'This game has ended.',
-        ephemeral: true
-      });
-    }
-
-    const roleId = '1534188793689538681';
+    const remainingPlayers = Math.max(0, league.maxPlayers - league.players.length);
 
     const embed = new EmbedBuilder()
-      .setTitle('Looking for 1 Sub')
-      .setDescription(
-        `Host is looking for **1 substitute player**.\n` +
-        `Use **/scrimjoin host:@${interaction.user.username}** to join.\n\n` +
-        `Issues? Join discord.gg/kwhPbxjySc`
-      )
-      .setColor(0x5865F2);
+      .setTitle(`${league.matchtype} League (${league.region})`)
+      .setDescription([
+        `Requesting \`${remainingPlayers}\` to join the game!`,
+        `Do /joinleague to Join.`,
+        `Hosted by \`${league.host}\``
+      ].join('\n'))
+      .setColor(0x3498db);
 
-    // ⭐ Send to original channel, not thread
-    await scrim.message.channel.send({
-      content: `<@&${roleId}>`,
-      embeds: [embed]
-    });
-
-    await interaction.reply({
-      content: 'Sub request sent in the main channel.',
-      ephemeral: true
+    return interaction.reply({
+      embeds: [embed],
+      ephemeral: false
     });
   }
 };
