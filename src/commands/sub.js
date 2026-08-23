@@ -16,7 +16,7 @@ export default {
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `<@${league.host.id}>`,
+        `<@1534188793689538681>`,
         `Looking for \`${remaining}\` Sub`,
         `Host is looking for \`${remaining}\` substitute player.`,
         ``,

@@ -78,6 +78,7 @@ export default {
 
     const embed = new EmbedBuilder()
       .setDescription([
+        `<@1534188793689538681>`,
         `<@${host.id}>`,
         `**Hosting a ${matchtype} Match (${region})**`,
         `Hosting a \`${gametype}\` game! Need \`${remaining}\` more players to join.`,

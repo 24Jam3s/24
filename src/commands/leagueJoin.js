@@ -29,17 +29,13 @@ export default {
 
     league.players.push(user);
 
-    // Add user to private thread
     await league.thread.members.add(user.id);
-
-    if (league.players.length >= league.maxPlayers) {
-      league.closed = true;
-    }
 
     const remaining = Math.max(0, league.maxPlayers - league.players.length);
 
     const embed = new EmbedBuilder()
       .setDescription([
+        `<@1534188793689538681>`,
         `<@${league.host.id}>`,
         `**Hosting a ${league.matchtype} Match (${league.region})**`,
         `Hosting a \`${league.gametype}\` game! Need \`${remaining}\` more players to join.`,
