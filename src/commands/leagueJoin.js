@@ -35,8 +35,7 @@ export default {
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `<@1534188793689538681>`,
-        `<@${league.host.id}>`,
+        `<@&1534188793689538681>`,
         `**Hosting a ${league.matchtype} Match (${league.region})**`,
         `Hosting a \`${league.gametype}\` game! Need \`${remaining}\` more players to join.`,
         `Hosted by: \`<@${league.host.id}>\``,
@@ -44,7 +43,7 @@ export default {
         `Players Joined:`,
         ...league.players.map(p => `• <@${p.id}>`),
         ``,
-        `/leaguejoin host:${league.host.id} to join!`
+        `/leaguejoin host:<@${league.host.id}> to join!`
       ].join('\n'))
       .setColor(0x3498db);
 
