@@ -7,7 +7,6 @@ export default {
 
   async execute(interaction) {
     interaction.client.league = null;
-
     return interaction.reply({ content: 'League has been ended.' });
   }
 };

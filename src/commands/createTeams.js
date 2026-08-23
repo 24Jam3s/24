@@ -12,11 +12,9 @@ export default {
       return interaction.reply({ content: 'No active league.', ephemeral: true });
     }
 
-    const gametype = league.gametype;
-    const size = parseInt(gametype[0]); // 1v1 → 1, 2v2 → 2, 3v3 → 3
-
-    const teams = [];
+    const size = parseInt(league.gametype[0]); // 1v1 → 1, 2v2 → 2, 3v3 → 3
     const players = league.players;
+    const teams = [];
 
     for (let i = 0; i < players.length; i += size) {
       const chunk = players.slice(i, i + size);
@@ -26,7 +24,7 @@ export default {
     league.teams = teams;
 
     return interaction.reply({
-      content: teams.map((t, i) => `Team ${i + 1}: ${t.join(', ')}`).join('\n')
+      content: teams.map((t, i) => `Team ${i + 1}: ${t.map(p => `<@${p.id}>`).join(', ')}`).join('\n')
     });
   }
 };

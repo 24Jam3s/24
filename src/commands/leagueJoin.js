@@ -3,32 +3,28 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('leaguejoin')
-    .setDescription('Join the active league match.'),
+    .setDescription('Join the active league match.')
+    .addUserOption(o =>
+      o.setName('host')
+        .setDescription('Host of the league')
+        .setRequired(true)
+    ),
 
   async execute(interaction) {
     const league = interaction.client.league;
 
     if (!league) {
-      return interaction.reply({
-        content: 'There is no active league.',
-        ephemeral: true
-      });
+      return interaction.reply({ content: 'There is no active league.', ephemeral: true });
+    }
+
+    const user = interaction.user;
+
+    if (league.players.includes(user)) {
+      return interaction.reply({ content: 'You are already in the league.', ephemeral: true });
     }
 
     if (league.closed) {
-      return interaction.reply({
-        content: 'League is full. No more players can join.',
-        ephemeral: true
-      });
-    }
-
-    const user = interaction.user.username;
-
-    if (league.players.includes(user)) {
-      return interaction.reply({
-        content: 'You are already in the league.',
-        ephemeral: true
-      });
+      return interaction.reply({ content: 'League is full.', ephemeral: true });
     }
 
     league.players.push(user);
@@ -37,26 +33,22 @@ export default {
       league.closed = true;
     }
 
-    const remainingPlayers = Math.max(0, league.maxPlayers - league.players.length);
+    const remaining = Math.max(0, league.maxPlayers - league.players.length);
 
     const embed = new EmbedBuilder()
-      .setTitle(`${league.matchtype} League (${league.region})`)
       .setDescription([
-        `Hosting a \`${league.gametype}\` Game! Need \`${remainingPlayers}\` players to join.`,
+        `<@${league.host.id}>`,
+        `**Hosting a ${league.matchtype} Match (${league.region})**`,
+        `Hosting a \`${league.gametype}\` game! Need \`${remaining}\` more players to join.`,
+        `Hosted by: \`${league.host.id}\``,
         ``,
-        `Joined Players:`,
-        ...league.players.map(p => `- ${p}`),
+        `Players Joined:`,
+        ...league.players.map(p => `• <@${p.id}>`),
         ``,
-        `Do /leaguejoin to join.`,
-        `host: ${league.host}`,
-        ``,
-        `Private Server: ${league.privateserver}`
+        `/leaguejoin host:${league.host.id} to join!`
       ].join('\n'))
       .setColor(0x3498db);
 
-    return interaction.reply({
-      embeds: [embed],
-      ephemeral: false
-    });
+    return interaction.reply({ embeds: [embed] });
   }
 };

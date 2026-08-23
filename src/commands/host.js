@@ -67,17 +67,16 @@ export default {
     const remaining = maxPlayers - 1;
 
     const embed = new EmbedBuilder()
-      .setTitle(`Hosting a ${matchtype} ${region}`)
       .setDescription([
-        `Hosting a ${gametype} game! Need ${remaining} more player(s) to join.`,
-        `Hosted by: ${host}`,
-        ``,
-        `Private Server: ${privateserver}`,
+        `<@${host.id}>`,
+        `**Hosting a ${matchtype} Match (${region})**`,
+        `Hosting a \`${gametype}\` game! Need \`${remaining}\` more players to join.`,
+        `Hosted by: \`${host.id}\``,
         ``,
         `Players Joined:`,
-        `${host}`,
+        `• <@${host.id}>`,
         ``,
-        `Use /leaguejoin host:${host.username} to join the scrim!`
+        `/leaguejoin host:${host.id} to join!`
       ].join('\n'))
       .setColor(0x3498db);
 
