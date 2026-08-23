@@ -28,7 +28,6 @@ export default {
     }
 
     league.players.push(user);
-
     await league.thread.members.add(user.id);
 
     const remaining = Math.max(0, league.maxPlayers - league.players.length);
