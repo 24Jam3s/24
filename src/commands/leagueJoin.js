@@ -29,6 +29,9 @@ export default {
 
     league.players.push(user);
 
+    // Add user to private thread
+    await league.thread.members.add(user.id);
+
     if (league.players.length >= league.maxPlayers) {
       league.closed = true;
     }

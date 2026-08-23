@@ -6,7 +6,14 @@ export default {
     .setDescription('End the current league.'),
 
   async execute(interaction) {
+    const league = interaction.client.league;
+
+    if (league?.thread) {
+      await league.thread.setArchived(true);
+    }
+
     interaction.client.league = null;
+
     return interaction.reply({ content: 'League has been ended.' });
   }
 };

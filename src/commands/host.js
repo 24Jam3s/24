@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ChannelType } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -52,6 +52,15 @@ export default {
     const maxPlayers = interaction.options.getInteger('maxplayers');
     const host = interaction.user;
 
+    // Create private thread
+    const thread = await interaction.channel.threads.create({
+      name: `${matchtype}-${region}-League`,
+      autoArchiveDuration: 60,
+      type: ChannelType.PrivateThread
+    });
+
+    await thread.members.add(host.id);
+
     interaction.client.league = {
       host,
       matchtype,
@@ -60,6 +69,7 @@ export default {
       privateserver,
       maxPlayers,
       players: [host],
+      thread,
       closed: false,
       teams: []
     };
