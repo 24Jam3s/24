@@ -12,7 +12,7 @@ export default {
       return interaction.reply({ content: 'No active league.', ephemeral: true });
     }
 
-    const size = parseInt(league.gametype[0]);
+    const size = parseInt(league.gametype[0]); // 1v1 → 1, 2v2 → 2, 3v3 → 3
     const players = league.players;
     const teams = [];
 

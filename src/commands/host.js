@@ -81,7 +81,7 @@ export default {
         `<@${host.id}>`,
         `**Hosting a ${matchtype} Match (${region})**`,
         `Hosting a \`${gametype}\` game! Need \`${remaining}\` more players to join.`,
-        `Hosted by: \`${host.id}\``,
+        `Hosted by: \`<@${host.id}>\``,
         ``,
         `Players Joined:`,
         `• <@${host.id}>`,
