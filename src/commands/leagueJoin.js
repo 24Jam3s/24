@@ -37,7 +37,7 @@ export default {
         `<@&1534188793689538681>`,
         `**Hosting a ${league.matchtype} Match (${league.region})**`,
         `Hosting a \`${league.gametype}\` game! Need \`${remaining}\` more players to join.`,
-        `Hosted by: \`<@${league.host.id}>\``,
+        `Hosted by: \`(${league.host.username})\``,
         ``,
         `Players Joined:`,
         ...league.players.map(p => `• <@${p.id}>`),

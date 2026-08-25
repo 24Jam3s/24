@@ -76,20 +76,19 @@ export default {
 
     const remaining = maxPlayers - 1;
 
-const embed = new EmbedBuilder()
-  .setDescription([
-    `<@&1534188793689538681>`,
-    `**Hosting a ${matchtype} Match (${region})**`,
-    `Hosting a \`${gametype}\` game! Need \`${remaining}\` more players to join.`,
-    `Hosted by: \`(${host.username})\``,
-    ``,
-    `Players Joined:`,
-    ...league.players.map(p => `• <@${p.id}>`),
-    ``,
-    `/leaguejoin host:<@${host.id}> to join!`
-  ].join('\n'))
-  .setColor(0x3498db);
-
+    const embed = new EmbedBuilder()
+      .setDescription([
+        `<@&1534188793689538681>`,
+        `**Hosting a ${matchtype} Match (${region})**`,
+        `Hosting a \`${gametype}\` game! Need \`${remaining}\` more players to join.`,
+        `Hosted by: \`(${host.username})\``,
+        ``,
+        `Players Joined:`,
+        `• <@${host.id}>`,
+        ``,
+        `/leaguejoin host:<@${host.id}> to join!`
+      ].join('\n'))
+      .setColor(0x3498db);
 
     return interaction.reply({ embeds: [embed] });
   }
