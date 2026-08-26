@@ -2,85 +2,118 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('tournament')
-    .setDescription('Create a tournament.')
+    .setName('tournamentcreate')
+    .setDescription('Create a new tournament.')
     .addStringOption(o =>
-      o.setName('format')
-        .setDescription('DL or CL')
+      o.setName('matchtype')
+        .setDescription('DL, CL, or RL')
         .setRequired(true)
         .addChoices(
-          { name: 'Default Loadout (DL)', value: 'DL' },
-          { name: 'Custom Loadout (CL)', value: 'CL' }
-        ))
+          { name: 'DL', value: 'DL' },
+          { name: 'CL', value: 'CL' },
+          { name: 'RL', value: 'RL' }
+        )
+    )
     .addStringOption(o =>
-      o.setName('type')
-        .setDescription('1v1 / 2v2 / 3v3')
+      o.setName('gametype')
+        .setDescription('1v1, 2v2, or 3v3')
         .setRequired(true)
         .addChoices(
           { name: '1v1', value: '1v1' },
           { name: '2v2', value: '2v2' },
           { name: '3v3', value: '3v3' }
-        ))
+        )
+    )
     .addStringOption(o =>
-      o.setName('prize')
-        .setDescription('Prize (e.g., Custom Role)')
+      o.setName('rules')
+        .setDescription('Comma-separated list of rules')
         .setRequired(true)
     )
     .addStringOption(o =>
-      o.setName('capacity')
-        .setDescription('8 Teams or 16 Teams')
+      o.setName('prize')
+        .setDescription('Prize for the tournament')
         .setRequired(true)
-        .addChoices(
-          { name: '8 Teams', value: '8' },
-          { name: '16 Teams', value: '16' }
-        ))
+    )
     .addStringOption(o =>
-      o.setName('mappool')
-        .setDescription('RCL Map pool or Legacy Maps')
+      o.setName('time')
+        .setDescription('Discord timestamp (e.g., <t:1720000000:F>)')
+        .setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName('teams')
+        .setDescription('Number of teams')
         .setRequired(true)
         .addChoices(
-          { name: 'RCL Map pool', value: 'RCL' },
-          { name: 'Legacy Maps', value: 'Legacy' }
-        )),
+          { name: '8 Teams', value: '8 Teams' },
+          { name: '16 Teams', value: '16 Teams' }
+        )
+    )
+    .addStringOption(o =>
+      o.setName('maps')
+        .setDescription('Map selection')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Any', value: 'Any' },
+          { name: 'Legacy', value: 'Legacy' }
+        )
+    ),
 
   async execute(interaction) {
-    const format = interaction.options.getString('format');
-    const type = interaction.options.getString('type');
+    if (!interaction.memberPermissions.has('Administrator')) {
+      return interaction.reply({ content: 'Only admins can create tournaments.', ephemeral: true });
+    }
+
+    const matchtype = interaction.options.getString('matchtype');
+    const gametype = interaction.options.getString('gametype');
+    const rulesRaw = interaction.options.getString('rules');
     const prize = interaction.options.getString('prize');
-    const capacity = interaction.options.getString('capacity');
-    const mappool = interaction.options.getString('mappool');
+    const time = interaction.options.getString('time');
+    const teams = interaction.options.getString('teams');
+    const maps = interaction.options.getString('maps');
 
-    const embed = new EmbedBuilder()
-      .setTitle(`${type} ${format} Tournament`)
-      .setDescription(
-        `Prize: **${prize}**\n\n` +
-        `**Tournament Information**\n` +
-        `• **Tournament Format:** ${type} ${format}\n` +
-        `• **Entry Capacity:** ${capacity} Teams\n` +
-        `• **Map Pool:** ${mappool}\n\n` +
-        `Use **/jointournament** to enter your team.`
-      )
-      .setColor(0xFFD700);
-
-    const msg = await interaction.reply({
-      content: '@everyone',
-      embeds: [embed],
-      fetchReply: true
-    });
+    // Format rules into bullet points
+    const rulesList = rulesRaw
+      .split(',')
+      .map(r => r.trim())
+      .filter(r => r.length > 0)
+      .map(r => `- ${r}`)
+      .join('\n');
 
     interaction.client.tournament = {
-      format,
-      type,
+      matchtype,
+      gametype,
+      rules: rulesList,
       prize,
-      capacity: parseInt(capacity),
-      mappool,
-      message: msg,
-      teams: []
+      time,
+      teams,
+      maps,
+      started: false,
+      finished: false,
+      entrants: [],
+      bracket: [],
+      reports: []
     };
 
-    await interaction.followUp({
-      content: 'Tournament created successfully.',
-      ephemeral: true
-    });
+    const embed = new EmbedBuilder()
+      .setDescription([
+        `# 🏆${gametype} ${matchtype} Tournament! 🏆`,
+        ``,
+        `**Prize:**`,
+        `- ${prize}`,
+        ``,
+        `**Information:**`,
+        `- ${time}`,
+        `- Maximum ${teams}`,
+        `- ${maps}`,
+        ``,
+        `**Rules:**`,
+        `${rulesList}`,
+        ``,
+        `**Use: \`/tournamentjoin\` To enter the tournament`,
+        `Use \`/checkin\` To confirm your entry (Only use 1hr before tournament!)**`
+      ].join('\n'))
+      .setColor(0x3498db);
+
+    return interaction.reply({ embeds: [embed] });
   }
 };
