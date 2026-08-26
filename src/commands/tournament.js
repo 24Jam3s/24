@@ -96,7 +96,7 @@ export default {
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆${gametype} ${matchtype} Tournament! 🏆`,
+        `# 🏆 ${gametype} ${matchtype} Tournament! 🏆`,
         ``,
         `**Prize:**`,
         `- ${prize}`,
