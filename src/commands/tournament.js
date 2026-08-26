@@ -96,17 +96,18 @@ export default {
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆 ${gametype} ${matchtype} Tournament! 🏆`,
+        `<@&1512466280618393682>`,
+        `# 🏆${gametype} ${matchtype} Tournament! 🏆`,
         ``,
-        `**Prize:**`,
+        `**\`\`Prize\`\`:**`,
         `- ${prize}`,
         ``,
-        `**Information:**`,
+        `**\`\`Information\`\`:**`,
         `- ${time}`,
         `- Maximum ${teams}`,
         `- ${maps}`,
         ``,
-        `**Rules:**`,
+        `**\`\`Rules\`\`:**`,
         `${rulesList}`,
         ``,
         `**Use: \`/tournamentjoin\` To enter the tournament`,
