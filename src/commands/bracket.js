@@ -1,56 +1,53 @@
-import { SlashCommandBuilder } from 'discord.js';
+// commands/bracket.js
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('bracket')
-    .setDescription('Generate the static tournament bracket.'),
+    .setDescription('View the current tournament bracket.'),
 
   async execute(interaction) {
-    const tournament = interaction.client.tournament;
+    const t = interaction.client.tournament;
 
-    if (!tournament) {
+    if (!t) {
       return interaction.reply({
-        content: 'There is no active tournament.',
+        content: 'No tournament has been created yet.',
         ephemeral: true
       });
     }
 
-    if (tournament.teams.length < 2) {
+    if (!t.bracket || t.bracket.length === 0) {
       return interaction.reply({
-        content: 'Not enough teams to generate a bracket.',
+        content: 'The bracket has not been generated yet. Start the tournament first.',
         ephemeral: true
       });
     }
 
-    const teams = [...tournament.teams];
+    const bracketLines = t.bracket.map((match, index) => {
+      const teamA = match.teamA ? match.teamA.name : 'TBD';
+      const teamB = match.teamB ? match.teamB.name : 'TBD';
+      const winner = match.winner ? match.winner.name : 'None';
 
-    for (let i = teams.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [teams[i], teams[j]] = [teams[j], teams[i]];
-    }
-
-    let bracket = `**${tournament.capacity}-Team Bracket**\n\n`;
-
-    for (let i = 0; i < teams.length; i += 2) {
-      const team1 = teams[i];
-      const team2 = teams[i + 1];
-
-      const team1Name = team1.teammate1
-        ? `${team1.user} + ${team1.teammate1}${team1.teammate2 ? ' + ' + team1.teammate2 : ''}`
-        : team1.user;
-
-      const team2Name = team2
-        ? (team2.teammate1
-            ? `${team2.user} + ${team2.teammate1}${team2.teammate2 ? ' + ' + team2.teammate2 : ''}`
-            : team2.user)
-        : 'BYE';
-
-      bracket += `Match ${i / 2 + 1}: **${team1Name}** vs **${team2Name}**\n`;
-    }
-
-    return interaction.reply({
-      content: bracket,
-      ephemeral: false
+      return [
+        `**Match ${index + 1}**`,
+        `- ${teamA} vs ${teamB}`,
+        `- Winner: ${winner}`,
+        ``
+      ].join('\n');
     });
+
+    const embed = new EmbedBuilder()
+      .setDescription([
+        `<@&1512466280618393682>`,
+        `# 🏆 Current Tournament Bracket 🏆`,
+        ``,
+        `**\`\`Round ${t.currentRound}\`\`**`,
+        ``,
+        bracketLines.join('\n'),
+        `Good luck to all teams!`
+      ].join('\n'))
+      .setColor(0xffd700);
+
+    return interaction.reply({ embeds: [embed] });
   }
 };

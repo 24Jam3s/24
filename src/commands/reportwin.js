@@ -1,36 +1,66 @@
-import { SlashCommandBuilder } from 'discord.js';
+// commands/matchreport.js
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('reportwin')
-    .setDescription('Report the winner of a match.')
-    .addIntegerOption(o =>
-      o.setName('match')
-        .setDescription('Match number')
-        .setRequired(true)
-    )
+    .setName('matchreport')
+    .setDescription('Report the result of a match.')
     .addStringOption(o =>
       o.setName('winner')
         .setDescription('Winning team name')
         .setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName('loser')
+        .setDescription('Losing team name')
+        .setRequired(true)
     ),
 
   async execute(interaction) {
-    const tournament = interaction.client.tournament;
+    const t = interaction.client.tournament;
 
-    if (!tournament || !tournament.started) {
+    if (!t) {
       return interaction.reply({
-        content: 'Tournament has not started yet.',
+        content: 'No tournament is currently active.',
         ephemeral: true
       });
     }
 
-    const match = interaction.options.getInteger('match');
-    const winner = interaction.options.getString('winner');
+    const winnerName = interaction.options.getString('winner');
+    const loserName = interaction.options.getString('loser');
 
-    return interaction.reply({
-      content: `🏆 **Match ${match} Winner:** ${winner}`,
-      ephemeral: false
+    const winnerTeam = t.teams.find(team => team.name.toLowerCase() === winnerName.toLowerCase());
+    const loserTeam = t.teams.find(team => team.name.toLowerCase() === loserName.toLowerCase());
+
+    if (!winnerTeam || !loserTeam) {
+      return interaction.reply({
+        content: 'One or both team names are invalid.',
+        ephemeral: true
+      });
+    }
+
+    // Store pending match report
+    t.matches.push({
+      winner: winnerTeam,
+      loser: loserTeam,
+      confirmed: false
     });
+
+    const embed = new EmbedBuilder()
+      .setDescription([
+        `<@&1512466280618393682>`,
+        `# 🏆 Match Reported 🏆`,
+        ``,
+        `**\`\`Winner\`\`**`,
+        `- ${winnerTeam.name}`,
+        ``,
+        `**\`\`Loser\`\`**`,
+        `- ${loserTeam.name}`,
+        ``,
+        `Awaiting confirmation from staff using /matchconfirm.`
+      ].join('\n'))
+      .setColor(0xffd700);
+
+    return interaction.reply({ embeds: [embed] });
   }
 };

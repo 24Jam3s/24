@@ -1,3 +1,4 @@
+// commands/tournamentcreate.js
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
@@ -5,115 +6,54 @@ export default {
     .setName('tournamentcreate')
     .setDescription('Create a new tournament.')
     .addStringOption(o =>
-      o.setName('matchtype')
-        .setDescription('DL, CL, or RL')
-        .setRequired(true)
-        .addChoices(
-          { name: 'DL', value: 'DL' },
-          { name: 'CL', value: 'CL' },
-          { name: 'RL', value: 'RL' }
-        )
-    )
-    .addStringOption(o =>
       o.setName('gametype')
-        .setDescription('1v1, 2v2, or 3v3')
-        .setRequired(true)
-        .addChoices(
-          { name: '1v1', value: '1v1' },
-          { name: '2v2', value: '2v2' },
-          { name: '3v3', value: '3v3' }
-        )
-    )
-    .addStringOption(o =>
-      o.setName('rules')
-        .setDescription('Comma-separated list of rules')
+        .setDescription('Gametype for the tournament')
         .setRequired(true)
     )
     .addStringOption(o =>
-      o.setName('prize')
-        .setDescription('Prize for the tournament')
+      o.setName('matchtype')
+        .setDescription('Match type (e.g. 2v2, 3v3)')
         .setRequired(true)
     )
     .addStringOption(o =>
       o.setName('time')
-        .setDescription('Discord timestamp (e.g., <t:1720000000:F>)')
+        .setDescription('Tournament start time')
         .setRequired(true)
-    )
-    .addStringOption(o =>
-      o.setName('teams')
-        .setDescription('Number of teams')
-        .setRequired(true)
-        .addChoices(
-          { name: '8 Teams', value: '8 Teams' },
-          { name: '16 Teams', value: '16 Teams' }
-        )
-    )
-    .addStringOption(o =>
-      o.setName('maps')
-        .setDescription('Map selection')
-        .setRequired(true)
-        .addChoices(
-          { name: 'Any', value: 'Any' },
-          { name: 'Legacy', value: 'Legacy' }
-        )
     ),
 
   async execute(interaction) {
-    if (!interaction.memberPermissions.has('Administrator')) {
-      return interaction.reply({ content: 'Only admins can create tournaments.', ephemeral: true });
-    }
-
-    const matchtype = interaction.options.getString('matchtype');
     const gametype = interaction.options.getString('gametype');
-    const rulesRaw = interaction.options.getString('rules');
-    const prize = interaction.options.getString('prize');
+    const matchtype = interaction.options.getString('matchtype');
     const time = interaction.options.getString('time');
-    const teams = interaction.options.getString('teams');
-    const maps = interaction.options.getString('maps');
-
-    // Format rules into bullet points
-    const rulesList = rulesRaw
-      .split(',')
-      .map(r => r.trim())
-      .filter(r => r.length > 0)
-      .map(r => `- ${r}`)
-      .join('\n');
 
     interaction.client.tournament = {
-      matchtype,
       gametype,
-      rules: rulesList,
-      prize,
+      matchtype,
       time,
-      teams,
-      maps,
-      started: false,
-      finished: false,
-      entrants: [],
+      teams: [],
+      matches: [],
       bracket: [],
-      reports: []
+      currentRound: 1,
+      status: 'Waiting'
     };
 
     const embed = new EmbedBuilder()
       .setDescription([
         `<@&1512466280618393682>`,
-        `# 🏆${gametype} ${matchtype} Tournament! 🏆`,
+        `# 🏆 Tournament Created 🏆`,
         ``,
-        `**\`\`Prize\`\`:**`,
-        `- ${prize}`,
+        `**\`\`Gametype\`\`**`,
+        `- ${gametype}`,
         ``,
-        `**\`\`Information\`\`:**`,
+        `**\`\`Matchtype\`\`**`,
+        `- ${matchtype}`,
+        ``,
+        `**\`\`Start Time\`\`**`,
         `- ${time}`,
-        `- Maximum ${teams}`,
-        `- ${maps}`,
         ``,
-        `**\`\`Rules\`\`:**`,
-        `${rulesList}`,
-        ``,
-        `**Use: \`/tournamentjoin\` To enter the tournament`,
-        `Use \`/checkin\` To confirm your entry (Only use 1hr before tournament!)**`
+        `Teams may now join the tournament.`
       ].join('\n'))
-      .setColor(0x3498db);
+      .setColor(0xffd700);
 
     return interaction.reply({ embeds: [embed] });
   }

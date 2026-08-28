@@ -1,50 +1,58 @@
-import { SlashCommandBuilder } from 'discord.js';
+// commands/tournamentjoin.js
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('jointournament')
-    .setDescription('Join the active tournament.')
+    .setName('tournamentjoin')
+    .setDescription('Join the tournament with a team.')
     .addStringOption(o =>
-      o.setName('teammate1')
-        .setDescription('First teammate (optional)')
-        .setRequired(false)
-    )
-    .addStringOption(o =>
-      o.setName('teammate2')
-        .setDescription('Second teammate (optional)')
-        .setRequired(false)
+      o.setName('teamname')
+        .setDescription('Your team name')
+        .setRequired(true)
     ),
 
   async execute(interaction) {
-    const tournament = interaction.client.tournament;
+    const t = interaction.client.tournament;
 
-    if (!tournament) {
+    if (!t) {
       return interaction.reply({
-        content: 'There is no active tournament.',
+        content: 'No tournament has been created yet.',
         ephemeral: true
       });
     }
 
-    if (tournament.started) {
+    const teamname = interaction.options.getString('teamname');
+
+    // Check if team already exists
+    const existingTeam = t.teams.find(team => team.name.toLowerCase() === teamname.toLowerCase());
+    if (existingTeam) {
       return interaction.reply({
-        content: 'Tournament has already started.',
+        content: 'A team with that name has already joined.',
         ephemeral: true
       });
     }
 
-    const user = interaction.user.username;
-    const teammate1 = interaction.options.getString('teammate1');
-    const teammate2 = interaction.options.getString('teammate2');
+    // Create new team
+    const newTeam = {
+      name: teamname,
+      members: [interaction.user.id]
+    };
 
-    tournament.teams.push({
-      user,
-      teammate1,
-      teammate2
-    });
+    t.teams.push(newTeam);
 
-    return interaction.reply({
-      content: `Team joined: ${user}${teammate1 ? ' + ' + teammate1 : ''}${teammate2 ? ' + ' + teammate2 : ''}`,
-      ephemeral: true
-    });
-  }
-};
+    const embed = new EmbedBuilder()
+      .setDescription([
+        `<@&1512466280618393682>`,
+        `# 🏆 Team Joined 🏆`,
+        ``,
+        `**\`\`Team Name\`\`**`,
+        `- ${teamname}`,
+        ``,
+        `**\`\`Captain\`\`**`,
+        `- <@${interaction.user.id}>`,
+        ``,
+        `Your team has successfully joined the tournament!`
+      ].join('\n'))
+      .setColor(0xffd700);
+
+    return interaction
