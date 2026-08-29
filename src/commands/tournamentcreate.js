@@ -6,7 +6,7 @@ export default {
     .setName('tournamentcreate')
     .setDescription('Create a new tournament.')
     .addStringOption(o =>
-      o.setName('gametype')
+      o.setName('matchtype')
         .setDescription('DL / CL / RL')
         .setRequired(true)
         .addChoices(
@@ -16,13 +16,13 @@ export default {
         )
     )
     .addStringOption(o =>
-      o.setName('matchtype')
-        .setDescription('1s / 2s / 3s')
+      o.setName('gametype')
+        .setDescription('2v2 / 3v3 / 1v1')
         .setRequired(true)
         .addChoices(
-          { name: '1s', value: '1s' },
-          { name: '2s', value: '2s' },
-          { name: '3s', value: '3s' }
+          { name: '2v2', value: '2v2' },
+          { name: '3v3', value: '3v3' },
+          { name: '1v1', value: '1v1' }
         )
     )
     .addStringOption(o =>
@@ -30,29 +30,29 @@ export default {
         .setDescription('Prize for the tournament')
         .setRequired(true)
     )
-    .addMentionableOption(o =>
+    .addStringOption(o =>
       o.setName('time')
-        .setDescription('Ping the time role')
+        .setDescription('Tournament start time (text)')
         .setRequired(true)
     )
-    .addIntegerOption(o =>
+    .addStringOption(o =>
       o.setName('teams')
-        .setDescription('Maximum teams (8 / 16 / 32)')
+        .setDescription('8 Teams / 16 Teams / 32 Teams')
         .setRequired(true)
         .addChoices(
-          { name: '8', value: 8 },
-          { name: '16', value: 16 },
-          { name: '32', value: 32 }
+          { name: '8 Teams', value: '8 Teams' },
+          { name: '16 Teams', value: '16 Teams' },
+          { name: '32 Teams', value: '32 Teams' }
         )
     )
     .addStringOption(o =>
       o.setName('maps')
-        .setDescription('Any / Legacy / RCL')
+        .setDescription('Any / RCL / Legacy')
         .setRequired(true)
         .addChoices(
           { name: 'Any', value: 'Any' },
-          { name: 'Legacy', value: 'Legacy' },
-          { name: 'RCL', value: 'RCL' }
+          { name: 'RCL', value: 'RCL' },
+          { name: 'Legacy', value: 'Legacy' }
         )
     )
     .addStringOption(o =>
@@ -62,15 +62,15 @@ export default {
     ),
 
   async execute(interaction) {
-    const gametype = interaction.options.getString('gametype');
     const matchtype = interaction.options.getString('matchtype');
+    const gametype = interaction.options.getString('gametype');
     const prize = interaction.options.getString('prize');
-    const time = interaction.options.getMentionable('time');
-    const teams = interaction.options.getInteger('teams');
+    const time = interaction.options.getString('time');
+    const teams = interaction.options.getString('teams');
     const maps = interaction.options.getString('maps');
     const rulesRaw = interaction.options.getString('rules');
 
-    // Convert comma-separated rules → list with "- "
+    // Convert comma-separated rules → "- rule" lines
     const rulesList = rulesRaw
       .split(',')
       .map(r => r.trim())
@@ -78,9 +78,10 @@ export default {
       .map(r => `- ${r}`)
       .join('\n');
 
+    // Store tournament data
     interaction.client.tournament = {
-      gametype,
       matchtype,
+      gametype,
       prize,
       time,
       teams,
@@ -96,7 +97,7 @@ export default {
     const embed = new EmbedBuilder()
       .setDescription([
         `<@&1512466280618393682>`,
-        `# 🏆 ${gametype} ${matchtype} Tournament! 🏆`,
+        `# 🏆 ${matchtype} ${gametype} Tournament! 🏆`,
         ``,
         `**\`\`Prize\`\`**`,
         `- ${prize}`,
@@ -112,7 +113,7 @@ export default {
         `**Use: \`\`/tournamentjoin\`\` To enter the tournament`,
         `Use \`\`/checkin\`\` To confirm your entry (Only use 1hr before tournament!)**`
       ].join('\n'))
-      .setColor(0xffd700);
+      .setColor(0x0066FF);
 
     return interaction.reply({ embeds: [embed] });
   }
