@@ -24,7 +24,10 @@ export default {
     const teamname = interaction.options.getString('teamname');
 
     // Check if team already exists
-    const existingTeam = t.teams.find(team => team.name.toLowerCase() === teamname.toLowerCase());
+    const existingTeam = t.teamsJoined.find(
+      team => team.name.toLowerCase() === teamname.toLowerCase()
+    );
+
     if (existingTeam) {
       return interaction.reply({
         content: 'A team with that name has already joined.',
@@ -38,21 +41,24 @@ export default {
       members: [interaction.user.id]
     };
 
-    t.teams.push(newTeam);
+    t.teamsJoined.push(newTeam);
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `<@&1512466280618393682>`,
-        `# 🏆 Team Joined 🏆`,
+        `# 🏆 Team Joined! 🏆`,
         ``,
-        `**\`\`Team Name\`\`**`,
+        `**Team Name:**`,
         `- ${teamname}`,
         ``,
-        `**\`\`Captain\`\`**`,
+        `**Captain:**`,
         `- <@${interaction.user.id}>`,
         ``,
-        `Your team has successfully joined the tournament!`
+        `Your team has successfully joined the tournament!`,
+        ``,
+        `Use \`\`/checkin\`\` 1 hour before the tournament to confirm your entry.`
       ].join('\n'))
-      .setColor(0xffd700);
+      .setColor(0x0066FF);
 
-    return interaction
+    return interaction.reply({ embeds: [embed] });
+  }
+};
