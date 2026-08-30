@@ -22,7 +22,14 @@ export default {
     ),
 
   async execute(interaction) {
-    const t = interaction.client.tournament;
+
+    // Ensure tournaments object exists
+    if (!interaction.client.tournaments) {
+      interaction.client.tournaments = {};
+    }
+
+    // Get tournament for THIS guild
+    const t = interaction.client.tournaments[interaction.guild.id];
 
     if (!t) {
       return interaction.reply({
@@ -31,18 +38,17 @@ export default {
       });
     }
 
-    // Collect players
     const p1 = interaction.options.getUser('player1');
     const p2 = interaction.options.getUser('player2');
     const p3 = interaction.options.getUser('player3');
 
     const players = [p1, p2, p3].filter(Boolean);
 
-    // Auto‑assign team name (Team A, Team B, Team C...)
-    const teamLetter = String.fromCharCode(65 + t.teamsJoined.length); // 65 = A
+    // Auto team name: Team A, Team B, Team C...
+    const teamLetter = String.fromCharCode(65 + t.teamsJoined.length);
     const teamName = `Team ${teamLetter}`;
 
-    // Check if any player is already in a team
+    // Prevent duplicate players
     for (const team of t.teamsJoined) {
       for (const member of team.members) {
         if (players.some(p => p.id === member)) {

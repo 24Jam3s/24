@@ -62,6 +62,14 @@ export default {
     ),
 
   async execute(interaction) {
+
+    // Ensure tournaments object exists
+    if (!interaction.client.tournaments) {
+      interaction.client.tournaments = {};
+    }
+
+    const guildId = interaction.guild.id;
+
     const matchtype = interaction.options.getString('matchtype');
     const gametype = interaction.options.getString('gametype');
     const prize = interaction.options.getString('prize');
@@ -78,8 +86,8 @@ export default {
       .map(r => `- ${r}`)
       .join('\n');
 
-    // Store tournament data
-    interaction.client.tournament = {
+    // Store tournament PER GUILD
+    interaction.client.tournaments[guildId] = {
       matchtype,
       gametype,
       prize,
