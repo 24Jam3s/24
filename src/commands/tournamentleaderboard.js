@@ -1,9 +1,9 @@
-// commands/leaderboard.js
+// commands/tournamentleaderboard.js
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('leaderboard')
+    .setName('tournamentleaderboard')
     .setDescription('View the global tournament leaderboard.'),
 
   async execute(interaction) {
@@ -16,7 +16,6 @@ export default {
       });
     }
 
-    // Convert stats object into sortable array
     const players = Object.entries(stats).map(([userId, data]) => ({
       userId,
       wins: data.wins || 0,
@@ -24,17 +23,12 @@ export default {
       tournamentWins: data.tournamentWins || 0
     }));
 
-    // Sort by:
-    // 1. Most Wins
-    // 2. Most Tournament Wins
-    // 3. Fewest Losses
     players.sort((a, b) => {
       if (b.wins !== a.wins) return b.wins - a.wins;
       if (b.tournamentWins !== a.tournamentWins) return b.tournamentWins - a.tournamentWins;
       return a.losses - b.losses;
     });
 
-    // Build leaderboard lines
     const lines = players.map((p, index) => {
       return `- ${index + 1}st: <@${p.userId}> Wins: \`\`${p.wins}\`\` | Losses: \`\`${p.losses}\`\` | Tournament Wins: \`\`${p.tournamentWins}\`\``;
     });
