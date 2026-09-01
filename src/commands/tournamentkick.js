@@ -1,9 +1,9 @@
-// commands/kick.js
+// commands/tournamentkick.js
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('kick')
+    .setName('tournamentkick')
     .setDescription('Remove a team from the tournament.')
     .addStringOption(o =>
       o.setName('team')
