@@ -44,6 +44,13 @@ class TitanBot extends Client {
     this.selectMenus = new Collection();
     this.modals = new Collection();
     this.cooldowns = new Collection();
+
+    // =========================
+    // TOURNAMENT SYSTEM STORAGE
+    // =========================
+    this.tournaments = {};   // per-guild tournament data
+    this.playerStats = {};   // global player stats
+
     this.db = null;
     this.rest = new REST({ version: '10' }).setToken(config.bot.token);
   }
