@@ -4,10 +4,16 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('bracket')
-    .setDescription('View the current tournament bracket.'),
+    .setDescription('View the tournament bracket or current team list.'),
 
   async execute(interaction) {
-    const t = interaction.client.tournament;
+
+    if (!interaction.client.tournaments) {
+      interaction.client.tournaments = {};
+    }
+
+    const guildId = interaction.guild.id;
+    const t = interaction.client.tournaments[guildId];
 
     if (!t) {
       return interaction.reply({
@@ -16,37 +22,84 @@ export default {
       });
     }
 
-    if (!t.bracket || t.bracket.length === 0) {
-      return interaction.reply({
-        content: 'The bracket has not been generated yet. Start the tournament first.',
-        ephemeral: true
+    // Determine required team size
+    const requiredSize =
+      t.gametype === '1v1' ? 1 :
+      t.gametype === '2v2' ? 2 :
+      t.gametype === '3v3' ? 3 : 1;
+
+    // If tournament has NOT started → show team list
+    if (t.status !== 'Started') {
+
+      const teamLines = t.teamsJoined.map(team => {
+        const members = team.members.map(id => `<@${id}>`).join('\n');
+        return `### ${team.name}\n${members}\n`;
       });
+
+      const embed = new EmbedBuilder()
+        .setDescription([
+          `# 🏆 Current Tournament Teams 🏆`,
+          ``,
+          `Match Type: **${t.matchtype}**`,
+          `Game Type: **${t.gametype} (${requiredSize} players per team)**`,
+          ``,
+          `## Teams Joined`,
+          teamLines.length > 0 ? teamLines.join('\n') : 'No teams have joined yet.',
+          ``,
+          `Bracket will be generated when the tournament starts.`
+        ].join('\n'))
+        .setColor(0x0066FF);
+
+      return interaction.reply({ embeds: [embed] });
     }
 
-    const bracketLines = t.bracket.map((match, index) => {
-      const teamA = match.teamA ? match.teamA.name : 'TBD';
-      const teamB = match.teamB ? match.teamB.name : 'TBD';
-      const winner = match.winner ? match.winner.name : 'None';
+    // Tournament has started → show full bracket
+    const rounds = {};
 
-      return [
-        `**Match ${index + 1}**`,
-        `- ${teamA} vs ${teamB}`,
-        `- Winner: ${winner}`,
-        ``
-      ].join('\n');
-    });
+    // Group matches by round
+    for (const match of t.matches) {
+      if (!rounds[match.round]) rounds[match.round] = [];
+      rounds[match.round].push(match);
+    }
+
+    const roundSections = [];
+
+    for (const roundNum of Object.keys(rounds)) {
+      const matches = rounds[roundNum];
+
+      const matchLines = matches.map((m, i) => {
+        const teamAList = m.teamA.members.map(id => `<@${id}>`).join('\n');
+        const teamBList = m.teamB.members.map(id => `<@${id}>`).join('\n');
+
+        return [
+          `### Match ${i + 1}`,
+          `**${m.teamA.name}**`,
+          `${teamAList}`,
+          ``,
+          `**VS**`,
+          ``,
+          `**${m.teamB.name}**`,
+          `${teamBList}`,
+          ``,
+          m.winner ? `Winner: **${m.winner.name}**` : `Winner: *Pending*`,
+          ``
+        ].join('\n');
+      });
+
+      roundSections.push([
+        `# 🔵 Round ${roundNum}`,
+        ``,
+        ...matchLines
+      ].join('\n'));
+    }
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `<@&1512466280618393682>`,
-        `# 🏆 Current Tournament Bracket 🏆`,
+        `# 🏆 Tournament Bracket 🏆`,
         ``,
-        `**\`\`Round ${t.currentRound}\`\`**`,
-        ``,
-        bracketLines.join('\n'),
-        `Good luck to all teams!`
+        ...roundSections
       ].join('\n'))
-      .setColor(0xffd700);
+      .setColor(0x0066FF);
 
     return interaction.reply({ embeds: [embed] });
   }

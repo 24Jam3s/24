@@ -4,22 +4,7 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('tournamentjoin')
-    .setDescription('Join the tournament by selecting the players.')
-    .addUserOption(o =>
-      o.setName('player1')
-        .setDescription('First player')
-        .setRequired(true)
-    )
-    .addUserOption(o =>
-      o.setName('player2')
-        .setDescription('Second player')
-        .setRequired(false)
-    )
-    .addUserOption(o =>
-      o.setName('player3')
-        .setDescription('Third player (for 3v3)')
-        .setRequired(false)
-    ),
+    .setDescription('Join the tournament as a player.'),
 
   async execute(interaction) {
 
@@ -28,8 +13,8 @@ export default {
       interaction.client.tournaments = {};
     }
 
-    // Get tournament for THIS guild
-    const t = interaction.client.tournaments[interaction.guild.id];
+    const guildId = interaction.guild.id;
+    const t = interaction.client.tournaments[guildId];
 
     if (!t) {
       return interaction.reply({
@@ -38,47 +23,57 @@ export default {
       });
     }
 
-    const p1 = interaction.options.getUser('player1');
-    const p2 = interaction.options.getUser('player2');
-    const p3 = interaction.options.getUser('player3');
+    const userId = interaction.user.id;
 
-    const players = [p1, p2, p3].filter(Boolean);
+    // Determine required team size
+    const requiredSize =
+      t.gametype === '1v1' ? 1 :
+      t.gametype === '2v2' ? 2 :
+      t.gametype === '3v3' ? 3 : 1;
 
-    // Auto team name: Team A, Team B, Team C...
-    const teamLetter = String.fromCharCode(65 + t.teamsJoined.length);
-    const teamName = `Team ${teamLetter}`;
+    // Check if user is already in a team
+    const alreadyInTeam = t.teamsJoined.some(team =>
+      team.members.includes(userId)
+    );
 
-    // Prevent duplicate players
-    for (const team of t.teamsJoined) {
-      for (const member of team.members) {
-        if (players.some(p => p.id === member)) {
-          return interaction.reply({
-            content: 'One or more selected players are already in a team.',
-            ephemeral: true
-          });
-        }
-      }
+    if (alreadyInTeam) {
+      return interaction.reply({
+        content: 'You are already in a team.',
+        ephemeral: true
+      });
     }
 
-    // Create team
-    const newTeam = {
-      name: teamName,
-      members: players.map(p => p.id)
-    };
+    // Try to find a team that is not full
+    let team = t.teamsJoined.find(team => team.members.length < requiredSize);
 
-    t.teamsJoined.push(newTeam);
+    // If no team exists or all teams are full → create new team
+    if (!team) {
+      const teamLetter = String.fromCharCode(65 + t.teamsJoined.length);
+      team = {
+        name: `Team ${teamLetter}`,
+        members: []
+      };
+      t.teamsJoined.push(team);
+    }
+
+    // Add player to team
+    team.members.push(userId);
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆 Team Joined! 🏆`,
+        `# 🏆 Tournament Join Successful 🏆`,
         ``,
-        `**Team Assigned:**`,
-        `- ${teamName}`,
+        `**Team:**`,
+        `- ${team.name}`,
         ``,
-        `**Players:**`,
-        ...players.map(p => `- <@${p.id}>`),
+        `**Player Added:**`,
+        `- <@${userId}>`,
         ``,
-        `Your team has successfully joined the tournament!`,
+        `Team size: \`${team.members.length}/${requiredSize}\``,
+        ``,
+        team.members.length === requiredSize
+          ? `Your team is now **FULL** and ready for the tournament!`
+          : `Waiting for more players to join your team...`,
         ``,
         `Use \`\`/checkin\`\` 1 hour before the tournament to confirm your entry.`
       ].join('\n'))

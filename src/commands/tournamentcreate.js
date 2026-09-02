@@ -1,4 +1,3 @@
-// commands/tournamentcreate.js
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 
 export default {
@@ -17,12 +16,12 @@ export default {
     )
     .addStringOption(o =>
       o.setName('gametype')
-        .setDescription('2v2 / 3v3 / 1v1')
+        .setDescription('1v1 / 2v2 / 3v3')
         .setRequired(true)
         .addChoices(
+          { name: '1v1', value: '1v1' },
           { name: '2v2', value: '2v2' },
-          { name: '3v3', value: '3v3' },
-          { name: '1v1', value: '1v1' }
+          { name: '3v3', value: '3v3' }
         )
     )
     .addStringOption(o =>
@@ -32,7 +31,7 @@ export default {
     )
     .addStringOption(o =>
       o.setName('time')
-        .setDescription('Tournament start time (text)')
+        .setDescription('Tournament start time')
         .setRequired(true)
     )
     .addStringOption(o =>
@@ -57,13 +56,12 @@ export default {
     )
     .addStringOption(o =>
       o.setName('rules')
-        .setDescription('Comma-separated rules (e.g. No cheating, No camo avatars)')
+        .setDescription('Comma-separated rules')
         .setRequired(true)
     ),
 
   async execute(interaction) {
 
-    // Ensure tournaments object exists
     if (!interaction.client.tournaments) {
       interaction.client.tournaments = {};
     }
@@ -78,15 +76,11 @@ export default {
     const maps = interaction.options.getString('maps');
     const rulesRaw = interaction.options.getString('rules');
 
-    // Convert comma-separated rules → "- rule" lines
     const rulesList = rulesRaw
       .split(',')
-      .map(r => r.trim())
-      .filter(r => r.length > 0)
-      .map(r => `- ${r}`)
+      .map(r => `- ${r.trim()}`)
       .join('\n');
 
-    // Store tournament PER GUILD
     interaction.client.tournaments[guildId] = {
       matchtype,
       gametype,
@@ -107,19 +101,19 @@ export default {
         `<@&1512466280618393682>`,
         `# 🏆 ${matchtype} ${gametype} Tournament! 🏆`,
         ``,
-        `**\`\`Prize\`\`**`,
+        `**Prize**`,
         `- ${prize}`,
         ``,
-        `**\`\`Information\`\`**`,
+        `**Information**`,
         `- ${time}`,
         `- Maximum ${teams}`,
         `- ${maps}`,
         ``,
-        `**\`\`Rules\`\`**`,
+        `**Rules**`,
         `${rulesList}`,
         ``,
-        `**Use: \`\`/tournamentjoin\`\` To enter the tournament`,
-        `Use \`\`/checkin\`\` To confirm your entry (Only use 1hr before tournament!)**`
+        `Use \`\`/tournamentjoin\`\` to enter the tournament.`,
+        `Use \`\`/checkin\`\` 1 hour before the tournament.`
       ].join('\n'))
       .setColor(0x0066FF);
 

@@ -47,14 +47,14 @@ export default {
     // Remove team from tournament
     t.teamsJoined.splice(teamIndex, 1);
 
-    // Remove team from bracket
+    // Remove team from bracket (single elimination)
     t.bracket = t.bracket.filter(match =>
       match.teamA.name !== removedTeam.name &&
       match.teamB.name !== removedTeam.name &&
       match.winner?.name !== removedTeam.name
     );
 
-    // Reassign team letters (Team A, Team B, Team C...)
+    // Re-letter teams (Team A, Team B, Team C...)
     t.teamsJoined.forEach((team, i) => {
       team.name = `Team ${String.fromCharCode(65 + i)}`;
     });

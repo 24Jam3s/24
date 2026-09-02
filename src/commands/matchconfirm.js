@@ -6,27 +6,47 @@ export default {
     .setName('matchconfirm')
     .setDescription('Confirm a reported match result.')
     .addIntegerOption(o =>
-      o.setName('matchid')
-        .setDescription('The match ID to confirm')
+      o.setName('match')
+        .setDescription('Match number')
         .setRequired(true)
     ),
 
   async execute(interaction) {
-    const t = interaction.client.tournament;
+
+    if (!interaction.client.tournaments) {
+      interaction.client.tournaments = {};
+    }
+
+    const guildId = interaction.guild.id;
+    const t = interaction.client.tournaments[guildId];
 
     if (!t) {
       return interaction.reply({
-        content: 'No tournament is currently active.',
+        content: 'No tournament has been created yet.',
         ephemeral: true
       });
     }
 
-    const matchId = interaction.options.getInteger('matchid');
-    const match = t.matches[matchId - 1];
+    if (t.status !== 'Started') {
+      return interaction.reply({
+        content: 'The tournament has not started yet.',
+        ephemeral: true
+      });
+    }
+
+    const matchNumber = interaction.options.getInteger('match');
+    const match = t.matches[matchNumber - 1];
 
     if (!match) {
       return interaction.reply({
-        content: 'Invalid match ID.',
+        content: 'Invalid match number.',
+        ephemeral: true
+      });
+    }
+
+    if (!match.winner) {
+      return interaction.reply({
+        content: 'This match has not been reported yet.',
         ephemeral: true
       });
     }
@@ -38,83 +58,104 @@ export default {
       });
     }
 
-    const winnerTeam = match.winner;
-    const loserTeam = match.loser;
+    // Confirm the match
+    match.confirmed = true;
 
-    // Ensure global stats object exists
+    // Update player stats
     if (!interaction.client.playerStats) {
       interaction.client.playerStats = {};
     }
 
-    // Update stats for winner team
-    for (const userId of winnerTeam.members) {
-      if (!interaction.client.playerStats[userId]) {
-        interaction.client.playerStats[userId] = {
-          wins: 0,
-          losses: 0,
-          matchesPlayed: 0,
-          tournamentsPlayed: 0,
-          tournamentWins: 0,
-          teams: []
-        };
-      }
+    const winnerTeam = match.winner;
+    const loserTeam = winnerTeam.name === match.teamA.name ? match.teamB : match.teamA;
 
-      interaction.client.playerStats[userId].wins += 1;
-      interaction.client.playerStats[userId].matchesPlayed += 1;
-
-      if (!interaction.client.playerStats[userId].teams.includes(winnerTeam.name)) {
-        interaction.client.playerStats[userId].teams.push(winnerTeam.name);
+    for (const id of winnerTeam.members) {
+      if (!interaction.client.playerStats[id]) {
+        interaction.client.playerStats[id] = { wins: 0, losses: 0, tournamentWins: 0 };
       }
+      interaction.client.playerStats[id].wins++;
     }
 
-    // Update stats for loser team
-    for (const userId of loserTeam.members) {
-      if (!interaction.client.playerStats[userId]) {
-        interaction.client.playerStats[userId] = {
-          wins: 0,
-          losses: 0,
-          matchesPlayed: 0,
-          tournamentsPlayed: 0,
-          tournamentWins: 0,
-          teams: []
-        };
+    for (const id of loserTeam.members) {
+      if (!interaction.client.playerStats[id]) {
+        interaction.client.playerStats[id] = { wins: 0, losses: 0, tournamentWins: 0 };
       }
-
-      interaction.client.playerStats[userId].losses += 1;
-      interaction.client.playerStats[userId].matchesPlayed += 1;
-
-      if (!interaction.client.playerStats[userId].teams.includes(loserTeam.name)) {
-        interaction.client.playerStats[userId].teams.push(loserTeam.name);
-      }
+      interaction.client.playerStats[id].losses++;
     }
 
-    // Mark match as confirmed
-    match.confirmed = true;
+    // Check if this was the final match
+    const allConfirmed = t.matches.every(m => m.confirmed);
 
-    // Update bracket winner
-    const bracketMatch = t.bracket.find(
-      m => m.teamA.name === winnerTeam.name || m.teamB.name === winnerTeam.name
-    );
+    if (allConfirmed && t.matches.length === 1) {
+      // Final match → tournament ends
+      const embed = new EmbedBuilder()
+        .setDescription([
+          `# 🏆 Final Match Confirmed 🏆`,
+          ``,
+          `**Champion Team:**`,
+          `- ${winnerTeam.name}`,
+          ``,
+          `Use \`\`/tournamentend\`\` to finish the tournament.`
+        ].join('\n'))
+        .setColor(0x0066FF);
 
-    if (bracketMatch) {
-      bracketMatch.winner = winnerTeam;
+      return interaction.reply({ embeds: [embed] });
     }
 
+    // If round is complete → generate next round
+    const roundMatches = t.matches.filter(m => m.round === t.currentRound);
+    const roundConfirmed = roundMatches.every(m => m.confirmed);
+
+    if (roundConfirmed) {
+      // Build next round
+      const winners = roundMatches.map(m => m.winner);
+
+      const nextRound = [];
+      for (let i = 0; i < winners.length; i += 2) {
+        const teamA = winners[i];
+        const teamB = winners[i + 1];
+
+        if (!teamB) break; // Odd number → bye
+
+        nextRound.push({
+          round: t.currentRound + 1,
+          teamA,
+          teamB,
+          winner: null,
+          confirmed: false,
+          reportedBy: null
+        });
+      }
+
+      t.currentRound++;
+      t.matches.push(...nextRound);
+
+      const embed = new EmbedBuilder()
+        .setDescription([
+          `# 🏆 Match Confirmed 🏆`,
+          ``,
+          `**Winner:**`,
+          `- ${winnerTeam.name}`,
+          ``,
+          `**Next Round Generated:**`,
+          ...nextRound.map((m, i) => `Match ${i + 1}: ${m.teamA.name} vs ${m.teamB.name}`)
+        ].join('\n'))
+        .setColor(0x0066FF);
+
+      return interaction.reply({ embeds: [embed] });
+    }
+
+    // Normal confirmation (not final, not end of round)
     const embed = new EmbedBuilder()
       .setDescription([
-        `<@&1512466280618393682>`,
         `# 🏆 Match Confirmed 🏆`,
         ``,
-        `**\`\`Winner\`\`**`,
+        `**Winner:**`,
         `- ${winnerTeam.name}`,
         ``,
-        `**\`\`Loser\`\`**`,
-        `- ${loserTeam.name}`,
-        ``,
-        `Global stats have been updated.`,
-        `Bracket has been updated.`
+        `Waiting for other matches in Round ${t.currentRound} to be confirmed...`
       ].join('\n'))
-      .setColor(0xffd700);
+      .setColor(0x0066FF);
 
     return interaction.reply({ embeds: [embed] });
   }

@@ -1,3 +1,9 @@
+// GLOBAL STORAGE FOR ALL GUILDS
+client.tournaments = {};
+
+// GLOBAL PLAYER STATS
+client.playerStats = {};
+
 import { logger } from '../utils/logger.js';
 
 export const botConfig = {

@@ -4,83 +4,83 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('tournamentend')
-    .setDescription('End the tournament and declare the winner.')
-    .addStringOption(o =>
-      o.setName('winner')
-        .setDescription('Winning team name')
-        .setRequired(true)
-    ),
+    .setDescription('End the tournament and announce the winner.'),
 
   async execute(interaction) {
-    const t = interaction.client.tournament;
+
+    // Ensure tournaments object exists
+    if (!interaction.client.tournaments) {
+      interaction.client.tournaments = {};
+    }
+
+    const guildId = interaction.guild.id;
+    const t = interaction.client.tournaments[guildId];
 
     if (!t) {
       return interaction.reply({
-        content: 'No tournament is currently active.',
+        content: 'No tournament has been created yet.',
         ephemeral: true
       });
     }
 
-    const winnerName = interaction.options.getString('winner');
-    const winnerTeam = t.teams.find(team => team.name.toLowerCase() === winnerName.toLowerCase());
-
-    if (!winnerTeam) {
+    if (t.status !== 'Started') {
       return interaction.reply({
-        content: 'That team is not in the tournament.',
+        content: 'The tournament has not started yet.',
         ephemeral: true
       });
     }
 
-    // Ensure global stats object exists
+    // Find final match winner
+    const finalMatch = t.matches[t.matches.length - 1];
+
+    if (!finalMatch || !finalMatch.winner) {
+      return interaction.reply({
+        content: 'The final match has not been completed yet.',
+        ephemeral: true
+      });
+    }
+
+    const winningTeam = finalMatch.winner;
+
+    // Award tournament wins to each player
     if (!interaction.client.playerStats) {
       interaction.client.playerStats = {};
     }
 
-    // Update stats for all teams that participated
-    for (const team of t.teams) {
-      for (const userId of team.members) {
-        if (!interaction.client.playerStats[userId]) {
-          interaction.client.playerStats[userId] = {
-            wins: 0,
-            losses: 0,
-            matchesPlayed: 0,
-            tournamentsPlayed: 0,
-            tournamentWins: 0,
-            teams: []
-          };
-        }
-
-        // Count tournament participation
-        interaction.client.playerStats[userId].tournamentsPlayed += 1;
-
-        // Track team history
-        if (!interaction.client.playerStats[userId].teams.includes(team.name)) {
-          interaction.client.playerStats[userId].teams.push(team.name);
-        }
+    for (const playerId of winningTeam.members) {
+      if (!interaction.client.playerStats[playerId]) {
+        interaction.client.playerStats[playerId] = {
+          wins: 0,
+          losses: 0,
+          tournamentWins: 0
+        };
       }
+      interaction.client.playerStats[playerId].tournamentWins++;
     }
 
-    // Award tournament wins to the winning team
-    for (const userId of winnerTeam.members) {
-      interaction.client.playerStats[userId].tournamentWins += 1;
-    }
+    // Build winner display
+    const memberList = winningTeam.members
+      .map(id => `- <@${id}>`)
+      .join('\n');
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `<@&1512466280618393682>`,
-        `# 🏆 Tournament Ended 🏆`,
+        `# 🏆 Tournament Finished! 🏆`,
         ``,
-        `**\`\`Winner\`\`**`,
-        `- ${winnerTeam.name}`,
+        `**Champion Team:**`,
+        `- ${winningTeam.name}`,
         ``,
-        `Congratulations to the champions!`,
+        `**Players:**`,
+        `${memberList}`,
         ``,
-        `Global stats have been updated.`
+        `Congratulations to the winners!`,
+        ``,
+        `The tournament has now ended.`
       ].join('\n'))
-      .setColor(0xffd700);
+      .setColor(0x0066FF);
 
-    // Clear tournament
-    interaction.client.tournament = null;
+    // Reset tournament
+    interaction.client.tournaments[guildId] = null;
 
     return interaction.reply({ embeds: [embed] });
   }
