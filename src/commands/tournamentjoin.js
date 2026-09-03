@@ -1,25 +1,31 @@
 // commands/tournamentjoin.js
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('tournamentjoin')
-    .setDescription('Join the tournament as a player.'),
+    .setName("tournamentjoin")
+    .setDescription("Join the current tournament."),
 
   async execute(interaction) {
+    const guildId = interaction.guild.id;
 
-    // Ensure tournaments object exists
     if (!interaction.client.tournaments) {
       interaction.client.tournaments = {};
     }
 
-    const guildId = interaction.guild.id;
     const t = interaction.client.tournaments[guildId];
 
     if (!t) {
       return interaction.reply({
-        content: 'No tournament has been created yet.',
-        ephemeral: true
+        content: "No tournament has been created yet.",
+        ephemeral: true,
+      });
+    }
+
+    if (t.status === "Started") {
+      return interaction.reply({
+        content: "The tournament has already started.",
+        ephemeral: true,
       });
     }
 
@@ -27,31 +33,32 @@ export default {
 
     // Determine required team size
     const requiredSize =
-      t.gametype === '1v1' ? 1 :
-      t.gametype === '2v2' ? 2 :
-      t.gametype === '3v3' ? 3 : 1;
+      t.gametype === "1v1" ? 1 :
+      t.gametype === "2v2" ? 2 :
+      t.gametype === "3v3" ? 3 : 1;
 
     // Check if user is already in a team
-    const alreadyInTeam = t.teamsJoined.some(team =>
+    const existingTeam = t.teamsJoined.find(team =>
       team.members.includes(userId)
     );
 
-    if (alreadyInTeam) {
+    if (existingTeam) {
       return interaction.reply({
-        content: 'You are already in a team.',
-        ephemeral: true
+        content: `You are already in **${existingTeam.name}**.`,
+        ephemeral: true,
       });
     }
 
-    // Try to find a team that is not full
+    // Find a team that is not full
     let team = t.teamsJoined.find(team => team.members.length < requiredSize);
 
-    // If no team exists or all teams are full → create new team
+    // If no team exists → create a new one
     if (!team) {
-      const teamLetter = String.fromCharCode(65 + t.teamsJoined.length);
+      const teamName = `Team ${String.fromCharCode(65 + t.teamsJoined.length)}`;
       team = {
-        name: `Team ${teamLetter}`,
-        members: []
+        name: teamName,
+        members: [],
+        checkins: [],
       };
       t.teamsJoined.push(team);
     }
@@ -59,26 +66,27 @@ export default {
     // Add player to team
     team.members.push(userId);
 
+    // Build player list formatting
+    const playerLines = team.members.map((id, index) => {
+      return `**Player ${index + 1}:** <@${id}>`;
+    }).join("\n");
+
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆 Tournament Join Successful 🏆`,
+        `# 🏆 Tournament Join`,
         ``,
-        `**Team:**`,
-        `- ${team.name}`,
+        `**You joined:** ${team.name}`,
         ``,
-        `**Player Added:**`,
-        `- <@${userId}>`,
+        `### Team Members`,
+        playerLines,
         ``,
         `Team size: \`${team.members.length}/${requiredSize}\``,
-        ``,
         team.members.length === requiredSize
-          ? `Your team is now **FULL** and ready for the tournament!`
-          : `Waiting for more players to join your team...`,
-        ``,
-        `Use \`\`/checkin\`\` 1 hour before the tournament to confirm your entry.`
-      ].join('\n'))
+          ? `✅ Your team is now full!`
+          : `⏳ Waiting for more players...`,
+      ].join("\n"))
       .setColor(0x0066FF);
 
     return interaction.reply({ embeds: [embed] });
-  }
+  },
 };
