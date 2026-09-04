@@ -1,57 +1,50 @@
 // commands/tournamentleaderboard.js
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('tournamentleaderboard')
-    .setDescription('View the tournament leaderboard.'),
+    .setName("tournamentleaderboard")
+    .setDescription("Show the global tournament leaderboard."),
 
   async execute(interaction) {
+    const stats = interaction.client.playerStats || {};
 
-    const stats = interaction.client.playerStats;
-
-    if (!stats || Object.keys(stats).length === 0) {
+    if (Object.keys(stats).length === 0) {
       return interaction.reply({
-        content: 'No player stats available yet.',
-        ephemeral: true
+        content: "No player stats recorded yet.",
+        ephemeral: true,
       });
     }
 
-    // Convert stats object → array
-    const players = Object.entries(stats).map(([userId, data]) => ({
-      userId,
-      wins: data.wins || 0,
-      losses: data.losses || 0,
-      tournamentWins: data.tournamentWins || 0
-    }));
+    const sorted = Object.entries(stats)
+      .sort((a, b) => {
+        const A = a[1];
+        const B = b[1];
+        return (
+          B.wins - A.wins ||
+          B.tournamentWins - A.tournamentWins ||
+          A.losses - B.losses
+        );
+      });
 
-    // Sort leaderboard
-    players.sort((a, b) => {
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      if (b.tournamentWins !== a.tournamentWins) return b.tournamentWins - a.tournamentWins;
-      return a.losses - b.losses;
-    });
-
-    // Build leaderboard lines
-    const lines = players.map((p, index) => {
-      const place =
-        index === 0 ? '🥇' :
-        index === 1 ? '🥈' :
-        index === 2 ? '🥉' :
-        `${index + 1}.`;
-
-      return `${place} <@${p.userId}> — Wins: \`${p.wins}\` | Losses: \`${p.losses}\` | Tournament Wins: \`${p.tournamentWins}\``;
+    const lines = sorted.map(([id, s], i) => {
+      return [
+        `### ${i + 1}. <@${id}>`,
+        `Wins: **${s.wins}**`,
+        `Losses: **${s.losses}**`,
+        `Tournament Wins: **${s.tournamentWins}**`,
+        ``,
+      ].join("\n");
     });
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆 Tournament Leaderboard 🏆`,
+        `# 🏆 Tournament Leaderboard`,
         ``,
-        `**Top Players:**`,
-        ...lines
-      ].join('\n'))
+        ...lines,
+      ].join("\n"))
       .setColor(0x0066FF);
 
     return interaction.reply({ embeds: [embed] });
-  }
+  },
 };

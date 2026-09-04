@@ -1,87 +1,64 @@
 // commands/tournamentend.js
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('tournamentend')
-    .setDescription('End the tournament and announce the winner.'),
+    .setName("tournamentend")
+    .setDescription("End the tournament and announce the winner."),
 
   async execute(interaction) {
-
-    // Ensure tournaments object exists
-    if (!interaction.client.tournaments) {
-      interaction.client.tournaments = {};
-    }
-
     const guildId = interaction.guild.id;
     const t = interaction.client.tournaments[guildId];
 
-    if (!t) {
+    if (!t || t.status !== "Started") {
       return interaction.reply({
-        content: 'No tournament has been created yet.',
-        ephemeral: true
+        content: "No active tournament to end.",
+        ephemeral: true,
       });
     }
 
-    if (t.status !== 'Started') {
-      return interaction.reply({
-        content: 'The tournament has not started yet.',
-        ephemeral: true
-      });
-    }
-
-    // Find final match winner
     const finalMatch = t.matches[t.matches.length - 1];
 
     if (!finalMatch || !finalMatch.winner) {
       return interaction.reply({
-        content: 'The final match has not been completed yet.',
-        ephemeral: true
+        content: "Final match has no confirmed winner.",
+        ephemeral: true,
       });
     }
 
-    const winningTeam = finalMatch.winner;
+    const winner = finalMatch.winner;
 
-    // Award tournament wins to each player
-    if (!interaction.client.playerStats) {
-      interaction.client.playerStats = {};
-    }
-
-    for (const playerId of winningTeam.members) {
-      if (!interaction.client.playerStats[playerId]) {
-        interaction.client.playerStats[playerId] = {
+    // Update stats
+    for (const id of winner.members) {
+      if (!interaction.client.playerStats[id]) {
+        interaction.client.playerStats[id] = {
           wins: 0,
           losses: 0,
-          tournamentWins: 0
+          tournamentWins: 0,
         };
       }
-      interaction.client.playerStats[playerId].tournamentWins++;
+      interaction.client.playerStats[id].tournamentWins++;
     }
 
-    // Build winner display
-    const memberList = winningTeam.members
-      .map(id => `- <@${id}>`)
-      .join('\n');
+    const players = winner.members
+      .map((id, i) => `**Player ${i + 1}:** <@${id}>`)
+      .join("\n");
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆 Tournament Finished! 🏆`,
+        `# 🏆 Tournament Finished`,
         ``,
-        `**Champion Team:**`,
-        `- ${winningTeam.name}`,
+        `### Winner: **${winner.name}**`,
         ``,
-        `**Players:**`,
-        `${memberList}`,
+        players,
         ``,
-        `Congratulations to the winners!`,
-        ``,
-        `The tournament has now ended.`
-      ].join('\n'))
+        `🎉 Congratulations to the champions!`,
+      ].join("\n"))
       .setColor(0x0066FF);
 
-    // Reset tournament
-    interaction.client.tournaments[guildId] = null;
+    // Clear tournament
+    delete interaction.client.tournaments[guildId];
 
     return interaction.reply({ embeds: [embed] });
-  }
+  },
 };

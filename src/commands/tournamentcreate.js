@@ -27,4 +27,75 @@ export default {
     )
     .addStringOption(o =>
       o.setName("prize")
-        .setDescription("Prize for the tournament
+        .setDescription("Prize for the tournament")
+        .setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName("rules")
+        .setDescription("Rules for the tournament")
+        .setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName("time")
+        .setDescription("Start time for the tournament")
+        .setRequired(true)
+    ),
+
+  async execute(interaction) {
+    const guildId = interaction.guild.id;
+
+    if (!interaction.client.tournaments) {
+      interaction.client.tournaments = {};
+    }
+
+    // Prevent overwriting an active tournament
+    if (interaction.client.tournaments[guildId]) {
+      return interaction.reply({
+        content: "A tournament is already active in this server.",
+        ephemeral: true,
+      });
+    }
+
+    const matchtype = interaction.options.getString("matchtype");
+    const gametype = interaction.options.getString("gametype");
+    const prize = interaction.options.getString("prize");
+    const rules = interaction.options.getString("rules");
+    const time = interaction.options.getString("time");
+
+    // Determine team size based on game type
+    const teamSize =
+      gametype === "1v1" ? 1 :
+      gametype === "2v2" ? 2 :
+      gametype === "3v3" ? 3 : 1;
+
+    // Create tournament object
+    interaction.client.tournaments[guildId] = {
+      matchtype,
+      gametype,
+      prize,
+      rules,
+      time,
+      teamSize,
+      status: "Created",
+      teamsJoined: [],
+      matches: [],
+      currentRound: 1,
+    };
+
+    const embed = new EmbedBuilder()
+      .setDescription([
+        `# 🏆 Tournament Created`,
+        ``,
+        `**Match Type:** ${matchtype}`,
+        `**Game Type:** ${gametype} (\`${teamSize}\` players per team)`,
+        `**Prize:** ${prize}`,
+        `**Rules:** ${rules}`,
+        `**Start Time:** ${time}`,
+        ``,
+        `Players can now join using \`/tournamentjoin\`.`
+      ].join("\n"))
+      .setColor(0x0066FF);
+
+    return interaction.reply({ embeds: [embed] });
+  },
+};

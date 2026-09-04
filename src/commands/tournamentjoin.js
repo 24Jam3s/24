@@ -4,7 +4,22 @@ import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 export default {
   data: new SlashCommandBuilder()
     .setName("tournamentjoin")
-    .setDescription("Join the current tournament."),
+    .setDescription("Join the tournament as a full team.")
+    .addStringOption(o =>
+      o.setName("player1")
+        .setDescription("Player 1 (mention or name)")
+        .setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName("player2")
+        .setDescription("Player 2 (mention or name)")
+        .setRequired(false)
+    )
+    .addStringOption(o =>
+      o.setName("player3")
+        .setDescription("Player 3 (mention or name)")
+        .setRequired(false)
+    ),
 
   async execute(interaction) {
     const guildId = interaction.guild.id;
@@ -29,61 +44,56 @@ export default {
       });
     }
 
-    const userId = interaction.user.id;
-
     // Determine required team size
     const requiredSize =
       t.gametype === "1v1" ? 1 :
       t.gametype === "2v2" ? 2 :
       t.gametype === "3v3" ? 3 : 1;
 
-    // Check if user is already in a team
-    const existingTeam = t.teamsJoined.find(team =>
-      team.members.includes(userId)
-    );
+    // Collect players from command
+    const players = [];
+    const p1 = interaction.options.getString("player1");
+    const p2 = interaction.options.getString("player2");
+    const p3 = interaction.options.getString("player3");
 
-    if (existingTeam) {
+    players.push(p1);
+    if (p2) players.push(p2);
+    if (p3) players.push(p3);
+
+    // Enforce correct team size
+    if (players.length !== requiredSize) {
       return interaction.reply({
-        content: `You are already in **${existingTeam.name}**.`,
+        content: `This tournament requires **${requiredSize} players per team**.\nYou entered **${players.length}**.`,
         ephemeral: true,
       });
     }
 
-    // Find a team that is not full
-    let team = t.teamsJoined.find(team => team.members.length < requiredSize);
+    // Create team name
+    const teamName = `Team ${String.fromCharCode(65 + t.teamsJoined.length)}`;
 
-    // If no team exists → create a new one
-    if (!team) {
-      const teamName = `Team ${String.fromCharCode(65 + t.teamsJoined.length)}`;
-      team = {
-        name: teamName,
-        members: [],
-        checkins: [],
-      };
-      t.teamsJoined.push(team);
-    }
-
-    // Add player to team
-    team.members.push(userId);
+    // Store team
+    t.teamsJoined.push({
+      name: teamName,
+      members: players,
+      checkins: [],
+    });
 
     // Build player list formatting
-    const playerLines = team.members.map((id, index) => {
-      return `**Player ${index + 1}:** <@${id}>`;
-    }).join("\n");
+    const playerLines = players
+      .map((p, i) => `**Player ${i + 1}:** ${p}`)
+      .join("\n");
 
     const embed = new EmbedBuilder()
       .setDescription([
         `# 🏆 Tournament Join`,
         ``,
-        `**You joined:** ${team.name}`,
+        `**Team Created:** ${teamName}`,
         ``,
         `### Team Members`,
         playerLines,
         ``,
-        `Team size: \`${team.members.length}/${requiredSize}\``,
-        team.members.length === requiredSize
-          ? `✅ Your team is now full!`
-          : `⏳ Waiting for more players...`,
+        `Team size: \`${players.length}/${requiredSize}\``,
+        `Your team has successfully joined the tournament!`,
       ].join("\n"))
       .setColor(0x0066FF);
 

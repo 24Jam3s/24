@@ -1,162 +1,198 @@
 // commands/matchconfirm.js
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('matchconfirm')
-    .setDescription('Confirm a reported match result.')
+    .setName("matchconfirm")
+    .setDescription("Confirm the winner of a match.")
     .addIntegerOption(o =>
-      o.setName('match')
-        .setDescription('Match number')
+      o.setName("match")
+        .setDescription("Match number to confirm")
+        .setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName("winner")
+        .setDescription("Winning team name (e.g., Team A)")
         .setRequired(true)
     ),
 
   async execute(interaction) {
-
-    if (!interaction.client.tournaments) {
-      interaction.client.tournaments = {};
-    }
-
     const guildId = interaction.guild.id;
     const t = interaction.client.tournaments[guildId];
 
-    if (!t) {
+    if (!t || t.status !== "Started") {
       return interaction.reply({
-        content: 'No tournament has been created yet.',
-        ephemeral: true
+        content: "No active tournament.",
+        ephemeral: true,
       });
     }
 
-    if (t.status !== 'Started') {
-      return interaction.reply({
-        content: 'The tournament has not started yet.',
-        ephemeral: true
-      });
-    }
+    const matchNumber = interaction.options.getInteger("match");
+    const winnerName = interaction.options.getString("winner");
 
-    const matchNumber = interaction.options.getInteger('match');
     const match = t.matches[matchNumber - 1];
-
     if (!match) {
       return interaction.reply({
-        content: 'Invalid match number.',
-        ephemeral: true
+        content: "Invalid match number.",
+        ephemeral: true,
       });
     }
 
-    if (!match.winner) {
+    // Determine winner
+    const winner =
+      match.teamA.name === winnerName
+        ? match.teamA
+        : match.teamB && match.teamB.name === winnerName
+        ? match.teamB
+        : null;
+
+    if (!winner) {
       return interaction.reply({
-        content: 'This match has not been reported yet.',
-        ephemeral: true
+        content: "Winner name does not match either team.",
+        ephemeral: true,
       });
     }
 
-    if (match.confirmed) {
-      return interaction.reply({
-        content: 'This match has already been confirmed.',
-        ephemeral: true
-      });
-    }
+    match.winner = winner;
 
-    // Confirm the match
-    match.confirmed = true;
+    // Determine loser
+    const loser =
+      match.teamA.name === winnerName ? match.teamB : match.teamA;
 
-    // Update player stats
-    if (!interaction.client.playerStats) {
-      interaction.client.playerStats = {};
-    }
+    // ============================
+    // UPDATE PLAYER STATS (NEW)
+    // ============================
 
-    const winnerTeam = match.winner;
-    const loserTeam = winnerTeam.name === match.teamA.name ? match.teamB : match.teamA;
-
-    for (const id of winnerTeam.members) {
+    // Winner stats
+    for (const id of winner.members) {
       if (!interaction.client.playerStats[id]) {
-        interaction.client.playerStats[id] = { wins: 0, losses: 0, tournamentWins: 0 };
+        interaction.client.playerStats[id] = {
+          wins: 0,
+          losses: 0,
+          tournamentWins: 0,
+        };
       }
       interaction.client.playerStats[id].wins++;
     }
 
-    for (const id of loserTeam.members) {
-      if (!interaction.client.playerStats[id]) {
-        interaction.client.playerStats[id] = { wins: 0, losses: 0, tournamentWins: 0 };
+    // Loser stats
+    if (loser) {
+      for (const id of loser.members) {
+        if (!interaction.client.playerStats[id]) {
+          interaction.client.playerStats[id] = {
+            wins: 0,
+            losses: 0,
+            tournamentWins: 0,
+          };
+        }
+        interaction.client.playerStats[id].losses++;
       }
-      interaction.client.playerStats[id].losses++;
     }
 
-    // Check if this was the final match
-    const allConfirmed = t.matches.every(m => m.confirmed);
+    // ============================
+    // CHECK IF ROUND IS COMPLETE
+    // ============================
 
+    const allConfirmed = t.matches.every(m => m.winner !== null);
+
+    // FINAL ROUND → ANNOUNCE WINNER
     if (allConfirmed && t.matches.length === 1) {
-      // Final match → tournament ends
+      const players = winner.members
+        .map((id, idx) => `**Player ${idx + 1}:** <@${id}>`)
+        .join("\n");
+
       const embed = new EmbedBuilder()
         .setDescription([
-          `# 🏆 Final Match Confirmed 🏆`,
+          `# 🏆 Tournament Winner`,
           ``,
-          `**Champion Team:**`,
-          `- ${winnerTeam.name}`,
+          `**${winner.name}**`,
+          players,
           ``,
-          `Use \`\`/tournamentend\`\` to finish the tournament.`
-        ].join('\n'))
+          `🎉 Congratulations to the champions!`,
+        ].join("\n"))
         .setColor(0x0066FF);
 
+      delete interaction.client.tournaments[guildId];
       return interaction.reply({ embeds: [embed] });
     }
 
-    // If round is complete → generate next round
-    const roundMatches = t.matches.filter(m => m.round === t.currentRound);
-    const roundConfirmed = roundMatches.every(m => m.confirmed);
+    // ============================
+    // GENERATE NEXT ROUND
+    // ============================
 
-    if (roundConfirmed) {
-      // Build next round
-      const winners = roundMatches.map(m => m.winner);
+    if (allConfirmed) {
+      const nextRoundTeams = t.matches.map(m => m.winner);
+      const newMatches = [];
 
-      const nextRound = [];
-      for (let i = 0; i < winners.length; i += 2) {
-        const teamA = winners[i];
-        const teamB = winners[i + 1];
+      for (let i = 0; i < nextRoundTeams.length; i += 2) {
+        const teamA = nextRoundTeams[i];
+        const teamB = nextRoundTeams[i + 1] || null;
 
-        if (!teamB) break; // Odd number → bye
-
-        nextRound.push({
-          round: t.currentRound + 1,
+        newMatches.push({
+          round: match.round + 1,
           teamA,
           teamB,
-          winner: null,
-          confirmed: false,
-          reportedBy: null
+          winner: teamB ? null : teamA, // auto-win if bye
         });
       }
 
-      t.currentRound++;
-      t.matches.push(...nextRound);
-
-      const embed = new EmbedBuilder()
-        .setDescription([
-          `# 🏆 Match Confirmed 🏆`,
-          ``,
-          `**Winner:**`,
-          `- ${winnerTeam.name}`,
-          ``,
-          `**Next Round Generated:**`,
-          ...nextRound.map((m, i) => `Match ${i + 1}: ${m.teamA.name} vs ${m.teamB.name}`)
-        ].join('\n'))
-        .setColor(0x0066FF);
-
-      return interaction.reply({ embeds: [embed] });
+      t.matches = newMatches;
     }
 
-    // Normal confirmation (not final, not end of round)
+    // ============================
+    // BUILD UPDATED BRACKET EMBED
+    // ============================
+
+    const rounds = {};
+    for (const m of t.matches) {
+      if (!rounds[m.round]) rounds[m.round] = [];
+      rounds[m.round].push(m);
+    }
+
+    const roundSections = Object.keys(rounds).map(roundNum => {
+      const matches = rounds[roundNum];
+
+      const matchLines = matches.map((m, i) => {
+        const teamAPlayers = m.teamA.members
+          .map((id, idx) => `**Player ${idx + 1}:** <@${id}>`)
+          .join("\n");
+
+        const teamBPlayers = m.teamB
+          ? m.teamB.members
+              .map((id, idx) => `**Player ${idx + 1}:** <@${id}>`)
+              .join("\n")
+          : "*Bye*";
+
+        return [
+          `### Match ${i + 1}`,
+          `**${m.teamA.name}**`,
+          teamAPlayers,
+          ``,
+          `**VS**`,
+          ``,
+          `**${m.teamB ? m.teamB.name : "No Opponent"}**`,
+          teamBPlayers,
+          ``,
+          m.winner ? `Winner: **${m.winner.name}**` : `Winner: *Pending*`,
+          ``,
+        ].join("\n");
+      });
+
+      return [
+        `# 🔵 Round ${roundNum}`,
+        ``,
+        ...matchLines,
+      ].join("\n");
+    });
+
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆 Match Confirmed 🏆`,
+        `# 🏆 Updated Bracket`,
         ``,
-        `**Winner:**`,
-        `- ${winnerTeam.name}`,
-        ``,
-        `Waiting for other matches in Round ${t.currentRound} to be confirmed...`
-      ].join('\n'))
+        ...roundSections,
+      ].join("\n"))
       .setColor(0x0066FF);
 
     return interaction.reply({ embeds: [embed] });
-  }
+  },
 };
