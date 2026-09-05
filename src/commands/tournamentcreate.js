@@ -6,8 +6,8 @@ export default {
     .setName("tournamentcreate")
     .setDescription("Create a new tournament.")
     .addStringOption(o =>
-      o.setName("matchtype")
-        .setDescription("Match type (DL / CL / RL)")
+      o.setName("gametype")
+        .setDescription("DL / CL / RL")
         .setRequired(true)
         .addChoices(
           { name: "DL", value: "DL" },
@@ -16,13 +16,13 @@ export default {
         )
     )
     .addStringOption(o =>
-      o.setName("gametype")
-        .setDescription("Game type (1v1 / 2v2 / 3v3)")
+      o.setName("matchtype")
+        .setDescription("1s / 2s / 3s")
         .setRequired(true)
         .addChoices(
-          { name: "1v1", value: "1v1" },
-          { name: "2v2", value: "2v2" },
-          { name: "3v3", value: "3v3" }
+          { name: "1s", value: "1s" },
+          { name: "2s", value: "2s" },
+          { name: "3s", value: "3s" }
         )
     )
     .addStringOption(o =>
@@ -31,13 +31,33 @@ export default {
         .setRequired(true)
     )
     .addStringOption(o =>
-      o.setName("rules")
-        .setDescription("Rules for the tournament")
+      o.setName("time")
+        .setDescription("Ping the time role")
         .setRequired(true)
     )
+    .addIntegerOption(o =>
+      o.setName("teams")
+        .setDescription("Team limit (8 / 16 / 32)")
+        .setRequired(true)
+        .addChoices(
+          { name: "8 Teams", value: 8 },
+          { name: "16 Teams", value: 16 },
+          { name: "32 Teams", value: 32 }
+        )
+    )
     .addStringOption(o =>
-      o.setName("time")
-        .setDescription("Start time for the tournament")
+      o.setName("maps")
+        .setDescription("Any / Legacy / RCL")
+        .setRequired(true)
+        .addChoices(
+          { name: "Any", value: "Any" },
+          { name: "Legacy", value: "Legacy" },
+          { name: "RCL", value: "RCL" }
+        )
+    )
+    .addStringOption(o =>
+      o.setName("rules")
+        .setDescription("Rules separated by commas")
         .setRequired(true)
     ),
 
@@ -48,33 +68,44 @@ export default {
       interaction.client.tournaments = {};
     }
 
-    // Prevent overwriting an active tournament
     if (interaction.client.tournaments[guildId]) {
       return interaction.reply({
-        content: "A tournament is already active in this server.",
+        content: "A tournament is already active.",
         ephemeral: true,
       });
     }
 
-    const matchtype = interaction.options.getString("matchtype");
     const gametype = interaction.options.getString("gametype");
+    const matchtype = interaction.options.getString("matchtype");
     const prize = interaction.options.getString("prize");
-    const rules = interaction.options.getString("rules");
     const time = interaction.options.getString("time");
+    const teams = interaction.options.getInteger("teams");
+    const maps = interaction.options.getString("maps");
+    const rulesRaw = interaction.options.getString("rules");
 
-    // Determine team size based on game type
+    // Convert rules into bullet points
+    const rulesList = rulesRaw
+      .split(",")
+      .map(r => r.trim())
+      .filter(r => r.length > 0)
+      .map(r => `- ${r}`)
+      .join("\n");
+
+    // Determine team size from matchtype
     const teamSize =
-      gametype === "1v1" ? 1 :
-      gametype === "2v2" ? 2 :
-      gametype === "3v3" ? 3 : 1;
+      matchtype === "1s" ? 1 :
+      matchtype === "2s" ? 2 :
+      matchtype === "3s" ? 3 : 1;
 
-    // Create tournament object
+    // Store tournament
     interaction.client.tournaments[guildId] = {
-      matchtype,
       gametype,
+      matchtype,
       prize,
-      rules,
       time,
+      teams,
+      maps,
+      rules: rulesList,
       teamSize,
       status: "Created",
       teamsJoined: [],
@@ -84,15 +115,21 @@ export default {
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆 Tournament Created`,
+        `# 🏆 ${gametype} ${matchtype} Tournament! 🏆`,
         ``,
-        `**Match Type:** ${matchtype}`,
-        `**Game Type:** ${gametype} (\`${teamSize}\` players per team)`,
-        `**Prize:** ${prize}`,
-        `**Rules:** ${rules}`,
-        `**Start Time:** ${time}`,
+        `**\`\`Prize\`\`:**`,
+        `- ${prize}`,
         ``,
-        `Players can now join using \`/tournamentjoin\`.`
+        `**\`\`Information\`\`:**`,
+        `- ${time}`,
+        `- Maximum **${teams} Teams**`,
+        `- Maps: **${maps}**`,
+        ``,
+        `**\`\`Rules\`\`:** <@&1512466280618393682>`,
+        `${rulesList}`,
+        ``,
+        `**Use:** \`\`/tournamentjoin\`\` to enter the tournament`,
+        `**Use:** \`\`/checkin\`\` to confirm your entry (Only use 1hr before tournament!)`,
       ].join("\n"))
       .setColor(0x0066FF);
 

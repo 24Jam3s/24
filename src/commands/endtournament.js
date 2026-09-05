@@ -28,7 +28,7 @@ export default {
 
     const winner = finalMatch.winner;
 
-    // Update stats
+    // Give all winners +1 tournament win
     for (const id of winner.members) {
       if (!interaction.client.playerStats[id]) {
         interaction.client.playerStats[id] = {
@@ -56,7 +56,6 @@ export default {
       ].join("\n"))
       .setColor(0x0066FF);
 
-    // Clear tournament
     delete interaction.client.tournaments[guildId];
 
     return interaction.reply({ embeds: [embed] });

@@ -27,19 +27,13 @@ export default {
         );
       });
 
-    const lines = sorted.map(([id, s], i) => {
-      return [
-        `### ${i + 1}. <@${id}>`,
-        `Wins: **${s.wins}**`,
-        `Losses: **${s.losses}**`,
-        `Tournament Wins: **${s.tournamentWins}**`,
-        ``,
-      ].join("\n");
+    const lines = sorted.map(([id, s]) => {
+      return `<@${id}> \`\`${s.wins}\`\` | \`\`${s.losses}\`\` | \`\`${s.tournamentWins}\`\``;
     });
 
     const embed = new EmbedBuilder()
       .setDescription([
-        `# 🏆 Tournament Leaderboard`,
+        `# 🏆 Leaderboard`,
         ``,
         ...lines,
       ].join("\n"))
